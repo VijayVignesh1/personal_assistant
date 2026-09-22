@@ -14,3 +14,11 @@ database/*
 # IDE
 .vscode/
 .idea/
+
+# Python
+pa_venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
