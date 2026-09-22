@@ -1,5 +1,5 @@
-import torch
 from dataclasses import dataclass
+import numpy as np
 
 @dataclass
 class Memory:
@@ -7,5 +7,6 @@ class Memory:
     timestamp: str
     importance: float
     episode_id: str
-    embedding: torch.Tensor = None
-    model_name: str = "text-embedding-3-small"
+    memory_id: str
+    embedding: bytes | None = None
+    model_name: str | None = None
