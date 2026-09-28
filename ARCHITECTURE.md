@@ -1,0 +1,101 @@
+# Architecture Overview
+This document details the overall architecture of the codebase, to equip contributors with comprehensive understanding of the codebase's architecture, enabling efficient navigation and effective contribution.
+
+## 1. Project Structure
+This section provides a high-level overview of the project's directory and file structure, categorised by architectural layer or major functional area. It is essential for quickly navigating the codebase, locating relevant files, and understanding the overall organization and separation of concerns.
+
+```
+[Project Root]/
+├── python/                     # Contains all python based code
+|   ├── personal_assistant
+        ├── src/                # Main source code for the python implementation
+            ├── db/             # Database models and handling
+            ├── memory/         # Memory creation logic
+            ├── embedding/      # Embedding creation logic
+            ├── retriever/      # Relavant document retrieval logic
+            └── response/       # Response generation logic
+            └── frontend/       # Contains all client-side code for user interfaces
+├── docs/                       # Project documentation
+├── .github/                    # GitHub Actions or other CI/CD configurations
+├── .gitignore                  # Specifies intentionally untracked files to ignore
+├── README.md                   # Project overview and quick start guide
+└── ARCHITECTURE.md             # This document
+```
+
+
+## 2. High-Level System Diagram
+```
+[User] <--> [Frontend] <--> [Application] <--> [Database]
+                                        |
+                                        + <--> [Memory]
+                                        |
+                                        + <--> [Retrieval]  <---> [Database]                          
+                                        |
+                                        + <--> [Response]    
+
+                    
+
+[Retrieval] ────|
+                ├──>[Embedding Service]
+[Memory]    ────|
+
+```
+
+## 3. Core Components
+
+### 3.1. Frontend
+
+Description: The main user interface for interacting with the system, allowing users to chat with the personal assistant.
+
+
+### 3.2. Database
+
+Description: Handles persistent data storage and retrieval. It is the only component that directly interacts with the underlying SQLite database and vector-search implementation. It provides interfaces for managing episodes, messages, memories, embeddings, and vector-search operations.
+
+
+### 3.3. Memory
+
+Description: Handles extraction and creation of long-term memories from conversation episodes, including memory selection and preparation for persistence.
+
+
+### 3.4. Retrieval
+
+Description: Handles retrieval of relevant memories and conversation context, including query preparation, candidate selection, reranking, filtering, deduplication, and final context selection.
+
+
+### 3.5. Reponse
+
+Description: Generates an assistant response using the current conversation, retrieved context, system instructions, and the provided language model.
+
+
+## 4. Data Stores
+
+(List and describe the databases and other persistent storage solutions used.)
+
+### 4.1. SQLite
+
+Name: Primary User Database
+
+Type: SQLite
+
+Purpose: Stores all the epsiodes along with it's messages, memories for each episode and embedding for each message.
+
+Key Schemas/Collections: [episode, message, memory]
+
+
+## 5. Development & Testing Environment
+
+Testing Frameworks: Pytest
+
+Code Quality Tools: Ruff, mypy
+
+
+## 6. Project Identification
+
+Project Name: Personal Assistant
+
+Repository URL: [Personal Assistant Repo](https://github.com/VijayVignesh1/personal_assistant)
+
+Primary Contact/Team: Vijay Vignesh Prasad Rao
+
+Date of Last Update: 2026-09-28
