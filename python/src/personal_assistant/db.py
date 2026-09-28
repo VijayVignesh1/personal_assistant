@@ -1,17 +1,18 @@
+import datetime
 import sqlite3
-from typing import List
-from datetime import datetime
-from personal_assistant.objects.memory import Memory
+
 from personal_assistant.objects.episode import Episode
+from personal_assistant.objects.memory import Memory
 from personal_assistant.objects.message import Message
+
 
 class Database:
     """
     A class to manage the SQLite database for the personal assistant application.
     """
-    def __init__(self, db_path='../database/diary.db'):
+    def __init__(self, db_path: str ='../database/diary.db'):
         self.db_path = db_path
-        self.connection = None
+        self.connection: sqlite3.Connection | None = None
         self._initialize_db()
             
     def _connect(self) -> None:
@@ -35,6 +36,7 @@ class Database:
         """
         self._connect()
         db = self.connection
+        assert db is not None, "Database connection is not established."
         try:
             db.execute('''CREATE TABLE IF NOT EXISTS episode (
                 episode_id TEXT NOT NULL PRIMARY KEY,
@@ -76,6 +78,7 @@ class Database:
         if not self.connection:
             self._connect()
         db = self.connection
+        assert db is not None, "Database connection is not established."
         try:
             db.execute("INSERT INTO episode(episode_id, started_at) VALUES (?, ?)", (episode.episode_id, episode.started_at))
             db.commit()
@@ -95,6 +98,7 @@ class Database:
         if not self.connection:
             self._connect()
         db = self.connection
+        assert db is not None, "Database connection is not established."
         try:
             db.execute('''
                 INSERT INTO message (
@@ -123,6 +127,7 @@ class Database:
         if not self.connection:
             self._connect()
         db = self.connection
+        assert db is not None, "Database connection is not established."
         try:
             cursor = db.execute('''
                 SELECT episode_id, started_at, ended_at
@@ -136,12 +141,10 @@ class Database:
             episode = Episode(episode_id=row[0], started_at=row[1], ended_at=row[2])
             
             return episode
-        except Exception:
-            raise
         finally:
             self._close()
 
-    def get_messages_by_episode(self, episode_id: str) -> List[Message]:
+    def get_messages_by_episode(self, episode_id: str) -> list[Message]:
         """
         Retrieve all messages associated with a specific episode ID.
         :param episode_id: The ID of the episode for which to retrieve messages.
@@ -150,6 +153,7 @@ class Database:
         if not self.connection:
             self._connect()
         db = self.connection
+        assert db is not None, "Database connection is not established."
         cursor = db.execute('''
             SELECT *
             FROM message
@@ -160,7 +164,7 @@ class Database:
         self._close()
         return messages
 
-    def get_full_episode(self, episode_id: str) -> tuple[Episode, List[Message]]:
+    def get_full_episode(self, episode_id: str) -> tuple[Episode | None, list[Message]]:
         """
         Retrieve an episode and its associated messages by episode ID.
         :param episode_id: The ID of the episode to retrieve.
@@ -169,7 +173,7 @@ class Database:
         episode = self.get_episode(episode_id)
         if episode is None:
             return None, []
-        episode_id, started_at, ended_at = episode.episode_id, episode.started_at, episode.ended_at
+        episode_id, _, _ = episode.episode_id, episode.started_at, episode.ended_at
         messages = self.get_messages_by_episode(episode_id)
         return episode, messages
 
@@ -182,7 +186,8 @@ class Database:
         if not self.connection:
             self._connect()
         db = self.connection
-        end_time = datetime.now().isoformat()
+        assert db is not None, "Database connection is not established."
+        end_time = datetime.datetime.now(tz=datetime.UTC).isoformat()
         try:
             cursor = db.execute('''UPDATE episode
             SET ended_at = ?
@@ -197,7 +202,7 @@ class Database:
         finally:
             self._close()
 
-    def save_memory(self, memories: List[Memory]) -> None:
+    def save_memory(self, memories: list[Memory]) -> None:
         """
         Save a list of Memory instances to the database.
         :param memories: A list of Memory instances to save.
@@ -205,6 +210,7 @@ class Database:
         if not self.connection:
             self._connect()
         db = self.connection
+        assert db is not None, "Database connection is not established."
         try:
             for memory in memories:
                 db.execute('''

@@ -1,11 +1,15 @@
-from personal_assistant.db import Database
+import datetime
+import sqlite3
 import uuid
-import pytest
-from personal_assistant.objects.memory import Memory
-from personal_assistant.objects.episode import Episode
-from personal_assistant.objects.message import Message
-from datetime import datetime
+
 import numpy as np
+import pytest
+
+from personal_assistant.db import Database
+from personal_assistant.objects.episode import Episode
+from personal_assistant.objects.memory import Memory
+from personal_assistant.objects.message import Message
+
 
 @pytest.fixture
 def db(tmp_path):
@@ -13,18 +17,18 @@ def db(tmp_path):
     return Database(db_path=str(db_path))
 
 def test_create_episode(db):
-    temp_episode = Episode(episode_id=str(uuid.uuid4()), started_at=datetime.now().isoformat())
+    temp_episode = Episode(episode_id=str(uuid.uuid4()), started_at=datetime.datetime.now(tz=datetime.UTC).isoformat())
     episode_id = db.create_episode(temp_episode)
     assert episode_id is not None
     print("PASS: create_episode")
 
 def test_add_message(db):
-    temp_episode = Episode(episode_id=str(uuid.uuid4()), started_at=datetime.now().isoformat())
+    temp_episode = Episode(episode_id=str(uuid.uuid4()), started_at=datetime.datetime.now(tz=datetime.UTC).isoformat())
     episode_id = db.create_episode(temp_episode)
     temp_message = Message(
         message_id=str(uuid.uuid4()),
         episode_id=episode_id,
-        timestamp=datetime.now().isoformat(),
+        timestamp=datetime.datetime.now(tz=datetime.UTC).isoformat(),
         role="user",
         content="Hello, how are you?"
     )
@@ -33,24 +37,21 @@ def test_add_message(db):
     print("PASS: add_message")
 
 def test_invalid_role_message(db):
-    temp_episode = Episode(episode_id=str(uuid.uuid4()), started_at=datetime.now().isoformat())
+    temp_episode = Episode(episode_id=str(uuid.uuid4()), started_at=datetime.datetime.now(tz=datetime.UTC).isoformat())
     episode_id = db.create_episode(temp_episode)
-    try:
-        temp_message = Message(
-            message_id=str(uuid.uuid4()),
-            episode_id=episode_id,
-            timestamp=datetime.now().isoformat(),
-            role="invalid_role",  # This should trigger a database constraint error
-            content="This should fail"
-        )
+    temp_message = Message(
+        message_id=str(uuid.uuid4()),
+        episode_id=episode_id,
+        timestamp=datetime.datetime.now(tz=datetime.UTC).isoformat(),
+        role="invalid_role",  # This should trigger a database constraint error
+        content="This should fail"
+    )
+    with pytest.raises(sqlite3.IntegrityError, match="CHECK constraint failed"):
         db.add_message(temp_message)
-        assert False, "Expected database constraint error"
-    except Exception:
-        pass
     print("PASS: invalid role rejected")
 
 def test_get_episode(db):
-    temp_episode = Episode(episode_id=str(uuid.uuid4()), started_at=datetime.now().isoformat())
+    temp_episode = Episode(episode_id=str(uuid.uuid4()), started_at=datetime.datetime.now(tz=datetime.UTC).isoformat())
     episode_id = db.create_episode(temp_episode)
     episode = db.get_episode(episode_id)
     assert episode is not None
@@ -64,12 +65,12 @@ def test_get_nonexistent_episode(db):
     print("PASS: get_nonexistent_episode")
 
 def test_get_messages_by_episode(db):
-    temp_episode = Episode(episode_id=str(uuid.uuid4()), started_at=datetime.now().isoformat())
+    temp_episode = Episode(episode_id=str(uuid.uuid4()), started_at=datetime.datetime.now(tz=datetime.UTC).isoformat())
     episode_id = db.create_episode(temp_episode)
     temp_message_user = Message(
         message_id=str(uuid.uuid4()),
         episode_id=episode_id,
-        timestamp=datetime.now().isoformat(),
+        timestamp=datetime.datetime.now(tz=datetime.UTC).isoformat(),
         role="user",
         content="Hello, how are you?"
     )
@@ -77,7 +78,7 @@ def test_get_messages_by_episode(db):
     temp_message_assistant = Message(
         message_id=str(uuid.uuid4()),
         episode_id=episode_id,
-        timestamp=datetime.now().isoformat(),
+        timestamp=datetime.datetime.now(tz=datetime.UTC).isoformat(),
         role="assistant",
         content="I'm good, thank you!"
     )
@@ -87,12 +88,12 @@ def test_get_messages_by_episode(db):
     print("PASS: get_messages_by_episode")
 
 def test_get_full_episode(db):
-    temp_episode = Episode(episode_id=str(uuid.uuid4()), started_at=datetime.now().isoformat())
+    temp_episode = Episode(episode_id=str(uuid.uuid4()), started_at=datetime.datetime.now(tz=datetime.UTC).isoformat())
     episode_id = db.create_episode(temp_episode)
     temp_message_user = Message(
         message_id=str(uuid.uuid4()),
         episode_id=episode_id,
-        timestamp=datetime.now().isoformat(),
+        timestamp=datetime.datetime.now(tz=datetime.UTC).isoformat(),
         role="user",
         content="Hello, how are you?"
     )
@@ -100,7 +101,7 @@ def test_get_full_episode(db):
     temp_message_assistant = Message(
         message_id=str(uuid.uuid4()),
         episode_id=episode_id,
-        timestamp=datetime.now().isoformat(),
+        timestamp=datetime.datetime.now(tz=datetime.UTC).isoformat(),
         role="assistant",
         content="I'm good, thank you!"
     )
@@ -111,7 +112,7 @@ def test_get_full_episode(db):
     print("PASS: get_full_episode")
 
 def test_close_episode(db):
-    temp_episode = Episode(episode_id=str(uuid.uuid4()), started_at=datetime.now().isoformat())
+    temp_episode = Episode(episode_id=str(uuid.uuid4()), started_at=datetime.datetime.now(tz=datetime.UTC).isoformat())
     episode_id = db.create_episode(temp_episode)
     db.close_episode(episode_id)
     episode = db.get_episode(episode_id)
@@ -119,11 +120,11 @@ def test_close_episode(db):
     print("PASS: close_episode")
 
 def test_save_memory(db):
-    episode_id = db.create_episode(Episode(episode_id=str(uuid.uuid4()), started_at=datetime.now().isoformat()))
+    episode_id = db.create_episode(Episode(episode_id=str(uuid.uuid4()), started_at=datetime.datetime.now(tz=datetime.UTC).isoformat()))
     memory = Memory(
         memory_id="test_memory",
         content="This is a test memory.",
-        timestamp=datetime.now().isoformat(),
+        timestamp=datetime.datetime.now(tz=datetime.UTC).isoformat(),
         importance=0.9,
         episode_id=episode_id,
         embedding=np.array([0.1, 0.2, 0.3], dtype=np.float32).tobytes(),
