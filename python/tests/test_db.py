@@ -5,7 +5,7 @@ import uuid
 import numpy as np
 import pytest
 
-from personal_assistant.db import Database
+from personal_assistant.db.db import Database
 from personal_assistant.objects.episode import Episode
 from personal_assistant.objects.memory import Memory
 from personal_assistant.objects.message import Message
