@@ -1,7 +1,7 @@
 # Personal Assistant
 A privacy-focused personal AI assistant with long-term memory, semantic retrieval, and local-first data storage, designed to evolve into a private multimodal assistant.
 
-## Python
+## Python Installation
 The Python code is located in the python/ directory.
 
 ### Prequisites
