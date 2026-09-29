@@ -13,10 +13,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Change working directory
-        run: cd python
-        shell: bash
         
       - name: Install uv
         uses: astral-sh/setup-uv@v6
@@ -24,16 +20,21 @@ jobs:
           enable-cache: true
 
       - name: Set up Python
+        working-directory: python
         run: uv python install
 
       - name: Install dependencies
+        working-directory: python
         run: uv sync
 
       - name: Ruff
+        working-directory: python
         run: uv run ruff check .
 
       - name: Mypy
+        working-directory: python
         run: uv run mypy src
 
       - name: Pytest
+        working-directory: python
         run: uv run pytest
