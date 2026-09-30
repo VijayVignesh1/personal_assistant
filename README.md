@@ -40,7 +40,7 @@ source .venv/bin/activate
 Install the project and development dependencies:
 
 ```
-uv sync --extra dev
+uv sync
 ```
 
 This installs the dependencies defined in pyproject.toml and creates/updates uv.lock.
@@ -54,7 +54,7 @@ uv run pytest
 
 #### Run linting
 ```
-uv run ruff check .
+uv run ruff check . --fix
 ```
 
 #### Run type checking
