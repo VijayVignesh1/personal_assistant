@@ -54,7 +54,7 @@ uv run pytest
 
 #### Run linting
 ```
-uv run ruff check .
+uv run ruff check . --fix
 ```
 
 #### Run type checking
