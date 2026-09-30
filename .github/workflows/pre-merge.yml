@@ -32,7 +32,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: python
-        run: uv sync --extra dev
+        run: uv sync
 
       - name: Ruff
         working-directory: python
