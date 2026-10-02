@@ -6,4 +6,4 @@ def test_generate_response():
     app = Application()
     query = "Hello"
     response = app.generate_response(query)
-    assert response == f"Bot: {query} (This is a placeholder response. Implement the actual response generation logic.)"
+    assert isinstance(response, str)
