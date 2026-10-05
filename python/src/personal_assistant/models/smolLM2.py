@@ -13,7 +13,7 @@ class SmolLM2(BaseLLM):
         self.model = AutoModelForCausalLM.from_pretrained(model_name).to(self.device)  # type: ignore[arg-type]
 
     def __call__(self, query: list[dict[str, str]], 
-                 max_new_tokens: int = 32768, 
+                 max_new_tokens: int = 2056, 
                  temperature: float = 0.7, 
                  top_p: float = 0.9
                  ) -> str:

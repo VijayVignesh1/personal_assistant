@@ -5,6 +5,6 @@ from dataclasses import dataclass
 class Message:
     content: str
     timestamp: str
-    role: float
+    role: str
     episode_id: str
     message_id: str
