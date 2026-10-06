@@ -79,3 +79,12 @@ uv add --dev pytest
 ```
 
 After adding packages, pyproject.toml and uv.lock are updated automatically.
+
+
+### Starting the chat
+
+1. Execute the main program
+```
+python main.py
+```
+2. Open the launched gradio UI using the given local URL. For example, `http://127.0.0.1:7860`

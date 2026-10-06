@@ -1,5 +1,6 @@
 import datetime
 import uuid
+from pathlib import Path
 
 from personal_assistant.db.db import Database
 from personal_assistant.models.smolLM2 import SmolLM2
@@ -7,10 +8,12 @@ from personal_assistant.objects.episode import Episode
 from personal_assistant.objects.message import Message
 from personal_assistant.response.response_generator import ResponseGenerator
 
+PROJECT_ROOT = Path(__file__).resolve().parents[4]
+DB_PATH = PROJECT_ROOT / "database" / "personal_assistant.db"
 
 class Application:
     def __init__(self, 
-                 db_path: str = '../../../database/personal_assistant.db'
+                 db_path: str | Path = DB_PATH
                  ) -> None:
         """Initialize the Application class."""
         self.llm_model = SmolLM2()
