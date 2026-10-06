@@ -1,5 +1,6 @@
 import datetime
 import sqlite3
+from pathlib import Path
 
 from personal_assistant.objects.episode import Episode
 from personal_assistant.objects.memory import Memory
@@ -10,7 +11,7 @@ class Database:
     """
     A class to manage the SQLite database for the personal assistant application.
     """
-    def __init__(self, db_path: str ='../database/diary.db'):
+    def __init__(self, db_path: str | Path):
         self.db_path = db_path
         self.connection: sqlite3.Connection | None = None
         self._initialize_db()

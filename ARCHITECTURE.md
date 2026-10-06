@@ -36,7 +36,7 @@ This section provides a high-level overview of the project's directory and file 
                                         |
                                         + <--> [Retrieval]  <---> [Database]                          
                                         |
-                                        + <--> [Response]    
+                                        + <--> [Response]   <---> [LLM Model]   
 
                     
 
@@ -72,6 +72,15 @@ Description: Handles retrieval of relevant memories and conversation context, in
 
 Description: Generates an assistant response using the current conversation, retrieved context, system instructions, and the provided language model.
 
+Input format: List[dict[str, str]] - [{'role': <user/system/assistant>, 'content': <message>}]
+Output format: str
+
+### 3.6. LLM Model
+
+Description: LLM class for different models that follows the strcuture of a base class to make sure multiple models can be plugged in and out while each can be handle input and output differently. The input format given to the class is always the same. Each model class is reponsible for converting it to the format it needs.
+
+Input format: List[dict[str, str]] - [{'role': <user/system/assistant>, 'content': <message>}]
+Output format: str
 
 ## 4. Data Stores
 

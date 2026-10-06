@@ -1,3 +1,6 @@
+import warnings
+
+import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from personal_assistant.models.base import BaseLLM
@@ -5,15 +8,16 @@ from personal_assistant.models.base import BaseLLM
 
 class SmolLM2(BaseLLM):
     def __init__(self, model_name: str = "HuggingFaceTB/SmolLM2-135M-Instruct", 
-                 device: str = "cpu",
                  ):
         """Initialize the SmolLM2 class."""
-        self.device = device
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        if self.device == "cpu":
+            warnings.warn("Running on CPU, performance may be slower.")
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForCausalLM.from_pretrained(model_name).to(self.device)  # type: ignore[arg-type]
 
     def __call__(self, query: list[dict[str, str]], 
-                 max_new_tokens: int = 32768, 
+                 max_new_tokens: int = 256, 
                  temperature: float = 0.7, 
                  top_p: float = 0.9
                  ) -> str:
@@ -35,7 +39,8 @@ class SmolLM2(BaseLLM):
         
         model_inputs = self.tokenizer([input_t], return_tensors="pt").to(self.device)
 
-        response = self.model.generate(**model_inputs, 
+        with torch.inference_mode():
+            response = self.model.generate(**model_inputs, 
                                        max_new_tokens=max_new_tokens, 
                                        do_sample=True, 
                                        temperature=temperature, 

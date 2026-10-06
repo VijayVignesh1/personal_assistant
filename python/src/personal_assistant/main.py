@@ -5,7 +5,10 @@ from personal_assistant.frontend.ui import UI
 def main() -> None:
     application = Application()
     ui = UI(application)
-    ui.launch()
+    try:
+        ui.launch()
+    finally:
+        application.close_episode()
 
 
 if __name__ == "__main__":
