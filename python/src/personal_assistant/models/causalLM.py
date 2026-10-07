@@ -6,10 +6,10 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from personal_assistant.models.base import BaseLLM
 
 
-class SmolLM2(BaseLLM):
+class causalLM(BaseLLM):
     def __init__(self, model_name: str = "HuggingFaceTB/SmolLM2-135M-Instruct", 
                  ):
-        """Initialize the SmolLM2 class."""
+        """Initialize the causalLM class."""
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         if self.device == "cpu":
             warnings.warn("Running on CPU, performance may be slower.")
@@ -33,18 +33,20 @@ class SmolLM2(BaseLLM):
         if not isinstance(query, list) or not all(isinstance(msg, dict) and "role" in msg and "content" in msg for msg in query):
             raise ValueError("Query must be a list of dictionaries with 'role' and 'content' keys.")
         
-        input_t = self.tokenizer.apply_chat_template(query, 
-                                                     tokenize=False,
-                                                     add_generation_prompt=True)
-        
-        model_inputs = self.tokenizer([input_t], return_tensors="pt").to(self.device)
+        model_inputs = self.tokenizer.apply_chat_template(
+            query,
+            tokenize=True,
+            add_generation_prompt=True,
+            return_tensors="pt",
+        ).to(self.device)  # type: ignore[union-attr]
 
         with torch.inference_mode():
             response = self.model.generate(**model_inputs, 
                                        max_new_tokens=max_new_tokens, 
+                                       max_length=None,
                                        do_sample=True, 
                                        temperature=temperature, 
-                                       top_p=top_p)
+                                       top_p=top_p)  
 
         output_ids = response[0][len(model_inputs["input_ids"][0]):]  # Get only the generated part
 

@@ -44,4 +44,4 @@ jobs:
 
       - name: Pytest
         working-directory: python
-        run: uv run pytest
+        run: uv run pytest -m "not gpu"

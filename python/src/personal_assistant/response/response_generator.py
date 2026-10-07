@@ -26,6 +26,7 @@ class ResponseGenerator:
             - Keep responses proportional to the user's question. Provide detail when it is useful, but avoid unnecessary repetition.
             - When helping with decisions, explain relevant options, trade-offs, and reasoning without making the decision for the user.
             - Treat the user's personal information and conversations as private.
+            - Remember names and relevant details about the user and relevant context from previous conversations.
 
             The current conversation and any retrieved memories are provided as context. Use them only when they are relevant to the user's request.
         """
