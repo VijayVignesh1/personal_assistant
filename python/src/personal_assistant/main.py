@@ -3,7 +3,7 @@ from personal_assistant.frontend.ui import UI
 
 
 def main() -> None:
-    application = Application()
+    application = Application(model_name = "unsloth/Qwen3-4B-Instruct-2507-bnb-4bit")
     ui = UI(application)
     try:
         ui.launch()

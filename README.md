@@ -5,8 +5,10 @@ A privacy-focused personal AI assistant with long-term memory, semantic retrieva
 The Python code is located in the python/ directory.
 
 ### Prequisites
-* Python 3.11+
-* uv
+- Python 3.11–3.13
+- [uv](https://docs.astral.sh/uv/)
+- NVIDIA GPU with CUDA 12.4 support
+- NVIDIA driver compatible with CUDA 12.4
 
 ### 1. Clonse the repository
 ```
@@ -44,6 +46,12 @@ uv sync
 ```
 
 This installs the dependencies defined in pyproject.toml and creates/updates uv.lock.
+
+NOTE: In order to run the models on GPU CUDA, make sure to install the pytorch version compatible with the underlying CUDA version. To find the cuda version, run `nvidia-smi`. For example, if the cuda version is 12.5, install any pytorch version with cuda 12.5 and below as shown below:
+```
+uv pip install torch --index-url https://download.pytorch.org/whl/cu124
+```
+
 
 ### 6. Verify the installation
 

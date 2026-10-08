@@ -3,20 +3,21 @@ import uuid
 from pathlib import Path
 
 from personal_assistant.db.db import Database
-from personal_assistant.models.smolLM2 import SmolLM2
+from personal_assistant.models.causalLM import causalLM
 from personal_assistant.objects.episode import Episode
 from personal_assistant.objects.message import Message
 from personal_assistant.response.response_generator import ResponseGenerator
 
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
 DB_PATH = PROJECT_ROOT / "database" / "personal_assistant.db"
-
+    
 class Application:
     def __init__(self, 
-                 db_path: str | Path = DB_PATH
+                 db_path: str | Path = DB_PATH,
+                 model_name: str = "HuggingFaceTB/SmolLM2-135M-Instruct",
                  ) -> None:
         """Initialize the Application class."""
-        self.llm_model = SmolLM2()
+        self.llm_model = causalLM(model_name=model_name)
         self.response_generator = ResponseGenerator(model=self.llm_model)
         self.db = Database(db_path=db_path)
         self.episode_id = str(uuid.uuid4())

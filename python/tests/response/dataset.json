@@ -1,0 +1,15 @@
+[
+    {   
+        "contains_testcases": [
+            {
+                "turns": [
+                {"role": "user", "content": "My name is Shiva."},
+                {"role": "assistant", "content": "Hello Shiva."},
+                {"role": "user", "content": "Yes. Now, do you remember my name? What's my name?"}
+                ],
+                "contains": "Shiva"
+            }
+        ]
+    }
+]
+
