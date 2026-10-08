@@ -7,6 +7,8 @@ The Python code is located in the python/ directory.
 ### Prequisites
 * Python 3.11+
 * uv
+* NVIDIA GPU with CUDA 12.4 support
+* NVIDIA driver compatible with CUDA 12.4
 
 ### 1. Clonse the repository
 ```
