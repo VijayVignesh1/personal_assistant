@@ -3,12 +3,12 @@ import uuid
 from pathlib import Path
 
 from personal_assistant.db.db import Database
+from personal_assistant.memory.memory_builder import MemoryBuilder
 from personal_assistant.models.causalLM import causalLM
+from personal_assistant.models.embeddingModel import embeddingModel
 from personal_assistant.objects.episode import Episode
 from personal_assistant.objects.message import Message
 from personal_assistant.response.response_generator import ResponseGenerator
-from personal_assistant.memory.memory_builder import MemoryBuilder
-from personal_assistant.models.embeddingModel import embeddingModel
 
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
 DB_PATH = PROJECT_ROOT / "database" / "personal_assistant.db"

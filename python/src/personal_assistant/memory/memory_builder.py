@@ -1,21 +1,22 @@
-from typing import List, Dict
-from personal_assistant.models.base import BaseLLM
-from personal_assistant.objects.memory import Memory
-from personal_assistant.objects.message import Message
+import datetime
 import json
 import uuid
-import datetime
+
+from personal_assistant.models.base import BaseEmbeddingModel, BaseLLM
+from personal_assistant.objects.memory import Memory
+from personal_assistant.objects.message import Message
+
 
 class MemoryBuilder:
     """A builder class for creating and managing memories."""
-    def __init__(self, llm_model: BaseLLM, embedding_model: BaseLLM) -> None:
+    def __init__(self, llm_model: BaseLLM, embedding_model: BaseEmbeddingModel) -> None:
         """Initialize the MemoryBuilder class."""
-        self.memories: List[Memory] = []
-        self.model = llm_model
+        self.memories: list[Memory] = []
+        self.llm_model = llm_model
         self.embedding_model = embedding_model
         self.token_size = 512
 
-    def _chunk_input(self, combined_message: str) -> None:
+    def _chunk_input(self, combined_message: str) -> list[str]:
         """Chunk the input message into smaller parts based on the specified token size.
         
         Args:
@@ -64,27 +65,27 @@ class MemoryBuilder:
             ]
         """
     
-    def create_memories(self, messages: List[Message], episode_id: str) -> List[Memory]:
+    def create_memories(self, messages: list[Message], episode_id: str) -> list[Memory]:
         """Create memories for the given episode ID."""
         # step 1: chunk the input in pieces
-        message_chunks = self._chunk_input(" ".join([";;".join([msg.role, msg.content]) for msg in messages]))
+        message_chunks = self._chunk_input(" ".join(f"{msg.role};;{msg.content}" for msg in messages))
         # step 2: generate memories from the chunked inputs
         system_context = self._generate_memory_prompt() 
         try:
             for chunk in message_chunks:
                 input_context = [{'role': 'system', 'content': system_context}, {'role': 'user', 'content': chunk}]
-                prospect_memories = json.loads(self.model(input_context))
+                prospect_memories = json.loads(self.llm_model(input_context))
                 # step 3: narrow down the important memories
                 filtered_memories = [Memory(content=mem["content"], 
                                             timestamp=str(datetime.datetime.now(tz=datetime.UTC)), 
                                             importance=float(mem["importance"]), 
                                             episode_id=episode_id, 
                                             memory_id=str(uuid.uuid4()),
-                                            embedding = self.embedding_model.embed(mem["content"]),
+                                            embedding = self.embedding_model(mem["content"]),
                                             model_name=self.embedding_model.model_name) for mem in prospect_memories if float(mem["importance"]) > 0.5]
                 self.memories.extend(filtered_memories)
-        except Exception as e:
-            raise Exception(f"Error generating memories: {e}")
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Error generating memories: {e}")
 
         # step 4: return the created memories
         return self.memories
