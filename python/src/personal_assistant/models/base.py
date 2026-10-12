@@ -1,12 +1,14 @@
+from abc import ABC, abstractmethod
 from typing import Any
 
 
-class BaseLLM:
+class BaseLLM(ABC):
     """Base class for language models."""
     def __init__(self, model_name: str) -> None:
         """Initialize the BaseLLM class."""
         self.model_name = model_name
 
+    @abstractmethod
     def __call__(self, query: list[dict[str, str]], *args: Any, **kwargs: Any) -> str:
         """Generate a response based on the given messages.
 
@@ -15,4 +17,14 @@ class BaseLLM:
                                             dictionary with 'role' and 'content' keys.
         """
         raise NotImplementedError("Subclasses must implement this method.")
-    
+
+
+class BaseEmbeddingModel(ABC):
+    """Base class for embedding models."""
+    def __init__(self, model_name: str) -> None:
+        """Initialize the BaseEmbeddingModel class."""
+        self.model_name = model_name
+    @abstractmethod
+    def __call__(self, input: str) -> bytes:
+        """Generate an embedding for the given input."""
+        raise NotImplementedError("Subclasses must implement this method.")
