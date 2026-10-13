@@ -224,3 +224,20 @@ class Database:
             raise
         finally:
             self._close()
+
+    def get_all_memories(self) -> list[Memory]:
+        """
+        Retrieve all memories from the database.
+        :return: A list of Memory instances.
+        """
+        if not self.connection:
+            self._connect()
+        db = self.connection
+        assert db is not None, "Database connection is not established."
+        try:
+            cursor = db.execute('SELECT content, timestamp, importance, episode_id, memory_id, embedding, model_name FROM memory')
+            rows = cursor.fetchall()
+            memories = [Memory(content=row[0], timestamp=row[1], importance=row[2], episode_id=row[3], memory_id=row[4], embedding=row[5], model_name=row[6]) for row in rows]
+            return memories
+        finally:
+            self._close()

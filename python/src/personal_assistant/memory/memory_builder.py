@@ -35,7 +35,8 @@ class MemoryBuilder:
             You are a experienced memory builder.
 
             Your role is to help build and manage memories based on the importance of the information for
-            long term storage and retrieval.
+            long term storage and retrieval. You always give the output in the specified format and do not
+            deviate from it at all.
 
             Guidelines:
             - Focus on identifying relavant parts of the message.
@@ -44,6 +45,7 @@ class MemoryBuilder:
             - Do not store trivial information.
             - Dates and events are important for contextualizing memories.
             - DO NOT GIVE MORE THAN 8 MEMORIES AT A TIME.
+            - Ensure that each memory is concise and captures a single piece of important information.
             
             Give the output exactly in the format given below as a list of dictionaries of memories.
             DO NOT CHANGE THE FORMAT OR ADD EXTRA FIELDS/TEXTS.
@@ -61,6 +63,11 @@ class MemoryBuilder:
                     "content": "Alice went to the park with Bob.",
                     "importance": "0.9",
                     "entities": "Alice, Bob, park"
+                },
+                {
+                    "content": "Bob bought a new car.",
+                    "importance": "0.8",
+                    "entities": "Bob, car"
                 }
             ]
         """

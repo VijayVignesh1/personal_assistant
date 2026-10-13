@@ -132,3 +132,19 @@ def test_save_memory(db):
     )
     db.save_memory([memory])
     print("PASS: save_memory")
+
+def test_get_all_memories(db):
+    episode_id = db.create_episode(Episode(episode_id=str(uuid.uuid4()), started_at=datetime.datetime.now(tz=datetime.UTC).isoformat()))
+    memory = Memory(
+        memory_id="test_memory",
+        content="This is a test memory.",
+        timestamp=datetime.datetime.now(tz=datetime.UTC).isoformat(),
+        importance=0.9,
+        episode_id=episode_id,
+        embedding=np.array([0.1, 0.2, 0.3], dtype=np.float32).tobytes(),
+        model_name="text-embedding-3-small"
+    )
+    db.save_memory([memory])
+    memories = db.get_all_memories()
+    assert any(mem.memory_id == "test_memory" for mem in memories)
+    print("PASS: get_all_memories")
