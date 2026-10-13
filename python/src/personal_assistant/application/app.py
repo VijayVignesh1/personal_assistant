@@ -9,6 +9,7 @@ from personal_assistant.models.embeddingModel import embeddingModel
 from personal_assistant.objects.episode import Episode
 from personal_assistant.objects.message import Message
 from personal_assistant.response.response_generator import ResponseGenerator
+from personal_assistant.retriever.retrieval import Retriever
 
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
 DB_PATH = PROJECT_ROOT / "database" / "personal_assistant.db"
@@ -49,7 +50,15 @@ class Application:
         context = []
         for message in last_messages:
             context.append({'role': message.role, 'content': message.content})
-        
+
+        # step 2a: retrieve relevant memories for context augmentation
+        retriever = Retriever(memories=self.db.get_all_memories())
+        relevant_memories = retriever.retrieve_relevant_memories(query=query, top_n=5)
+        for memory in relevant_memories:
+            context.append({'role': 'system', 'content': memory.content})
+
+        print(context)
+
         response =  self.response_generator.generate_response(context)
 
         # step 3: add the generated response to the episode
@@ -70,5 +79,6 @@ class Application:
         all_messages = self.db.get_messages_by_episode(episode_id=self.episode_id)
         memories = self.memory_builder.create_memories(all_messages, episode_id=self.episode_id)
         self.db.save_memory(memories)
+        print(f"Saved memories for episode {[memory.content for memory in memories]}")
         self.ended_at = str(datetime.datetime.now(tz=datetime.UTC))
         self.db.close_episode(self.episode_id)

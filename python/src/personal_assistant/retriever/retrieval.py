@@ -1,13 +1,28 @@
+from rank_bm25 import BM25Okapi  # type: ignore[import-untyped]
+
+from personal_assistant.objects.memory import Memory
+
+
 class Retriever:
-    def __init__(self) -> None:
+    def __init__(self, memories: list[Memory]) -> None:
         """Initialize the Retriever class."""
-    def prepare_query(self) -> None:
-        """Prepare a query from the given messages."""
-    def semantic_search(self) -> None:
-        """Perform a semantic search using the given query."""
-    def rank_memories(self) -> None:
-        """Rank the given memories based on their relevance to the query."""
-    def deduplicate_memories(self) -> None:
-        """Deduplicate the given memories."""
-    def retrieve_relevant_memories(self) -> None:
-        """Retrieve relevant memories based on the given messages."""
+        self.memories = memories
+
+        self.tokenized_memories = [self._tokenize(memory.content) for memory in memories]
+
+        self.bm25 = BM25Okapi(self.tokenized_memories) if self.tokenized_memories else None
+
+    def _tokenize(self, text: str) -> list[str]:
+        """Tokenize the given text into a list of words."""
+        return text.lower().split()
+
+    def retrieve_relevant_memories(self, query: str, top_n: int = 5) -> list[Memory]:
+        """Retrieve relevant memories based on the given query."""
+        tokenized_query = self._tokenize(query)
+        relevant_memories = self.bm25.get_scores(tokenized_query) if self.bm25 else []
+
+        ranked_memories = sorted(range(len(relevant_memories)), key = relevant_memories.__getitem__, reverse=True)
+
+        results = [self.memories[i] for i in ranked_memories[:top_n]]
+
+        return results
