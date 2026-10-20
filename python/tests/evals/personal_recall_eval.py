@@ -1,12 +1,14 @@
-from dotenv import load_dotenv
 import os
 from pathlib import Path
-from deepeval.metrics import AnswerRelevancyMetric
+
 from deepeval import evaluate
-from personal_assistant.response.response_generator import ResponseGenerator
-from personal_assistant.models.causalLM import causalLM
+from deepeval.metrics import AnswerRelevancyMetric
 from deepeval.models import GeminiModel
 from deepeval.test_case import LLMTestCase
+from dotenv import load_dotenv
+
+from personal_assistant.models.causalLM import causalLM
+from personal_assistant.response.response_generator import ResponseGenerator
 
 env_path = Path(__file__).resolve().parent / ".env"
 print(f"Loading environment variables from: {env_path}")
