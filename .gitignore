@@ -22,3 +22,9 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# Google gemini api key
+tests/**/.env
+
+# deepevals files
+.deepeval/

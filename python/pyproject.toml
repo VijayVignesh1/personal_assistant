@@ -16,6 +16,8 @@ dependencies = [
     "bitsandbytes>=0.50.2",
     "sentence-transformers>=6.1.0",
     "rank-bm25>=0.2.2",
+    "google-genai>=2.31.0",
+    "langchain-google-genai>=4.4.2",
 ]
 
 [dependency-groups]
@@ -31,6 +33,10 @@ build-backend = "hatchling.build"
 
 [tool.uv.sources]
 torch = { index = "pytorch-cu124" }
+
+[[tool.uv.index]]
+url = "https://pypi.org/simple"
+default = true
 
 [[tool.uv.index]]
 name = "pytorch-cu124"

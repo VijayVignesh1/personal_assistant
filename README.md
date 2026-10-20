@@ -89,10 +89,41 @@ uv add --dev pytest
 After adding packages, pyproject.toml and uv.lock are updated automatically.
 
 
-### Starting the chat
+### 8. Starting the chat
 
 1. Execute the main program
 ```
 python main.py
 ```
 2. Open the launched gradio UI using the given local URL. For example, `http://127.0.0.1:7860`
+
+
+### Configure Google Gemini for DeepEval
+
+DeepEval supports Google Gemini for generating synthetic evaluation datasets.
+
+### 1. Install dependencies
+
+#### Step 1: Create a Gemini API Key
+
+1. Open [Google AI Studio](https://aistudio.google.com/).
+2. Sign in with your Google account.
+3. Navigate to the **API Keys** page in the dashboard, or open
+   [Google AI Studio API Keys](https://aistudio.google.com/apikey).
+4. Click **Create API Key**.
+5. Select an existing Google Cloud project or create/import a project if prompted.
+6. Copy the generated API key.
+
+See the [official Gemini API documentation](https://ai.google.dev/gemini-api/docs/api-key) for details.
+
+#### Step 2: Configure the API Key
+
+```
+export GOOGLE_API_KEY=gemini-api-key
+```
+
+#### Step 3: Run the evals
+
+```
+python tests/evals/eval.py
+```
