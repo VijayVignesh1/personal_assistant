@@ -1,7 +1,9 @@
 import warnings
+from typing import Any
 
-import torch
 import ollama
+import torch
+from ollama.exceptions import ResponseError  # type: ignore[import-not-found]
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from personal_assistant.models.base import BaseLLM
@@ -20,7 +22,7 @@ class causalLM(BaseLLM):
                 warnings.warn("Running on CPU, performance may be slower.")
             self.tokenizer = AutoTokenizer.from_pretrained(model_name)
             self.model = AutoModelForCausalLM.from_pretrained(model_name).to(self.device)  # type: ignore[arg-type]
-        except Exception as e:
+        except OSError as e:
             warnings.warn(f"Failed to initialize the model: {e}")
         
         try:
@@ -31,13 +33,14 @@ class causalLM(BaseLLM):
                 ollama.pull(model=self.model_name)
                 print(f"Model '{self.model_name}' downloaded successfully.")
             self.ollama = "ollama"
-        except Exception as e:
+        except ResponseError as e:
             warnings.warn(f"Failed to initialize Ollama model: {e}")
 
         if self.model is None and self.ollama is None:
             raise RuntimeError("Failed to initialize both HuggingFace and Ollama models. Give a valid model name.")
 
-    def __call__(self, query: list[dict[str, str]], **kwargs) -> str:
+    def __call__(self, query: list[dict[str, str]], **kwargs: Any) -> str:
+        """Generate a response based on the given query using the initialized model."""
         if self.model is not None:
             return self._call_huggingface(query, **kwargs)
         elif self.ollama is not None:
@@ -46,7 +49,7 @@ class causalLM(BaseLLM):
             raise RuntimeError("No model is initialized.")
         
     def _call_huggingface(self, query: list[dict[str, str]], 
-                 **kwargs
+                 **kwargs: Any
                  ) -> str:
         """Generate a response based on the given messages.
 
@@ -68,7 +71,7 @@ class causalLM(BaseLLM):
         ).to(self.device)  # type: ignore[union-attr]
 
         with torch.inference_mode():
-            response = self.model.generate(**model_inputs, 
+            response = self.model.generate(**model_inputs,  #type: ignore[union-attr]
                                        max_new_tokens=kwargs.get("max_new_tokens", 256), 
                                        max_length=None,
                                        do_sample=True, 
@@ -81,9 +84,10 @@ class causalLM(BaseLLM):
 
         return output if isinstance(output, str) else output[0]  # skip batch decode for now
 
-    def _call_ollama(self, query: list[dict[str, str]], **kwargs) -> str:
+    def _call_ollama(self, query: list[dict[str, str]], **kwargs: Any) -> str:
+        """Generate a response using the Ollama model."""
         if not isinstance(query, list) or not all(isinstance(msg, dict) and "role" in msg and "content" in msg for msg in query):
             raise ValueError("Query must be a list of dictionaries with 'role' and 'content' keys.")
 
         response = ollama.chat(model=self.model_name, messages=query, **kwargs)
-        return response.message.content
+        return response.message.content if hasattr(response.message, "content") else "" 
