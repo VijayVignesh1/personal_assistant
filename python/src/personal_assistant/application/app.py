@@ -5,7 +5,6 @@ from pathlib import Path
 from personal_assistant.db.db import Database
 from personal_assistant.memory.memory_builder import MemoryBuilder
 from personal_assistant.models.causalLM import causalLM
-from personal_assistant.models.ollamaLM import ollamaLM
 from personal_assistant.models.embeddingModel import embeddingModel
 from personal_assistant.objects.episode import Episode
 from personal_assistant.objects.message import Message
@@ -22,7 +21,7 @@ class Application:
                  embedding_model_name: str = "Qwen/Qwen3-Embedding-0.6B",
                  ) -> None:
         """Initialize the Application class."""
-        self.llm_model = ollamaLM(model_name=llm_model_name)
+        self.llm_model = causalLM(model_name=llm_model_name)
         self.embedding_model = embeddingModel(model_name=embedding_model_name)
         self.response_generator = ResponseGenerator(model=self.llm_model)
         self.memory_builder = MemoryBuilder(llm_model=self.llm_model, embedding_model=self.embedding_model)

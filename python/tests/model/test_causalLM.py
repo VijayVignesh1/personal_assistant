@@ -31,3 +31,19 @@ def test_causalLM_missing_keys():
     
     with pytest.raises(ValueError):
         model(invalid_query)
+
+def test_hf_call():
+    """Test the HuggingFace model call specifically."""
+    model = causalLM()
+    query = [{"role": "user", "content": "Hello, how are you?"}]
+    response = model._call_huggingface(query)
+    
+    assert isinstance(response, str)
+
+def test_ollama_call():
+    """Test the Ollama model call specifically."""
+    model = causalLM(model_name = "gemma4:e2b")
+    query = [{"role": "user", "content": "Hello, how are you?"}]
+    response = model._call_ollama(query)
+    
+    assert isinstance(response, str)
