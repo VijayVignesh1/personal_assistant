@@ -3,7 +3,7 @@ from typing import Any
 
 import ollama
 import torch
-from ollama.exceptions import ResponseError  # type: ignore[import-not-found]
+from ollama import ResponseError
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from personal_assistant.models.base import BaseLLM
