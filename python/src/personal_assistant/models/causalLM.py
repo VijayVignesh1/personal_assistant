@@ -24,17 +24,18 @@ class causalLM(BaseLLM):
             self.model = AutoModelForCausalLM.from_pretrained(model_name).to(self.device)  # type: ignore[arg-type]
         except OSError as e:
             warnings.warn(f"Failed to initialize the model: {e}")
-        
-        try:
-            models = ollama.list()
-            available = [m.model for m in models.models]
-            if self.model_name not in available:
-                print(f"Model '{self.model_name}' is not available. Downloading the model")
-                ollama.pull(model=self.model_name)
-                print(f"Model '{self.model_name}' downloaded successfully.")
-            self.ollama = "ollama"
-        except ResponseError as e:
-            warnings.warn(f"Failed to initialize Ollama model: {e}")
+
+        if self.model is None:
+            try:
+                models = ollama.list()
+                available = [m.model for m in models.models]
+                if self.model_name not in available:
+                    print(f"Model '{self.model_name}' is not available. Downloading the model")
+                    ollama.pull(model=self.model_name)
+                    print(f"Model '{self.model_name}' downloaded successfully.")
+                self.ollama = "ollama"
+            except ResponseError as e:
+                warnings.warn(f"Failed to initialize Ollama model: {e}")
 
         if self.model is None and self.ollama is None:
             raise RuntimeError("Failed to initialize both HuggingFace and Ollama models. Give a valid model name.")

@@ -40,6 +40,7 @@ def test_hf_call():
     
     assert isinstance(response, str)
 
+@pytest.mark.ollama
 def test_ollama_call():
     """Test the Ollama model call specifically."""
     model = causalLM(model_name = "gemma4:e2b")
