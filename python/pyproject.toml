@@ -45,7 +45,7 @@ packages = ["src/personal_assistant"]
 testpaths = ["tests"]
 markers = [
     "gpu: tests that require a GPU",
-    "ollama: tests that require ollama connection,
+    "ollama: tests that require ollama connection",
 ]
 
 [tool.ruff]
