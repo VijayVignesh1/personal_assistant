@@ -13,20 +13,26 @@ from personal_assistant.models.causalLM import causalLM
 from personal_assistant.response.response_generator import ResponseGenerator
 
 MODEL_NAME = "gemma4:e2b"
-env_path = Path(__file__).resolve().parent / ".env"
-print(f"Loading environment variables from: {env_path}")
-# Load environment variables.
-load_dotenv(dotenv_path=env_path, override=True)
-api_key = os.getenv("GOOGLE_API_KEY")
 
-if not api_key:
-    raise ValueError("GOOGLE_API_KEY is missing from .env")
+@pytest.mark.gemini
+@pytest.fixture
+def api_key():
+    env_path = Path(__file__).resolve().parent / ".env"
+    print(f"Loading environment variables from: {env_path}")
+    # Load environment variables.
+    load_dotenv(dotenv_path=env_path, override=True)
+    api_key = os.getenv("GOOGLE_API_KEY")
+
+    if not api_key:
+        raise ValueError("GOOGLE_API_KEY is missing from .env")
+
+    return api_key
 
 goldens = [Golden(input="What's my name?", context=["The user's name is Alex and your name is GPT."], expected_output="Your name is Alex")]
 
 @pytest.mark.ollama
 @pytest.mark.parametrize("golden", goldens)
-def test_agent_name_recall(golden: Golden):
+def test_agent_name_recall(golden: Golden, api_key: str):
     llm_model = causalLM(model_name=MODEL_NAME)
     response_generator = ResponseGenerator(model=llm_model)
     messages = [{"role": "user", "content": golden.input},] + [{"role": "system", "content": ctx} for ctx in golden.context]
