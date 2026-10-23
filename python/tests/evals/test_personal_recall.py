@@ -2,10 +2,10 @@ import os
 from pathlib import Path
 
 import pytest
-from deepeval.dataset import Golden
-from deepeval.models import GeminiModel
-from deepeval.metrics import GEval
 from deepeval import assert_test
+from deepeval.dataset import Golden
+from deepeval.metrics import GEval
+from deepeval.models import GeminiModel
 from deepeval.test_case import LLMTestCase, SingleTurnParams
 from dotenv import load_dotenv
 
