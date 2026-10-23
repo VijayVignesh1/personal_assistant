@@ -14,7 +14,6 @@ from personal_assistant.response.response_generator import ResponseGenerator
 
 MODEL_NAME = "gemma4:e2b"
 
-@pytest.mark.gemini
 @pytest.fixture
 def api_key():
     env_path = Path(__file__).resolve().parent / ".env"
