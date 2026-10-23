@@ -46,7 +46,6 @@ class ResponseGenerator:
         
         full_query = [{"role": "system", "content": self.prompt}] + query
 
-        print(full_query)
         output = self.model(full_query)
         
         return output
