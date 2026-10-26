@@ -1,3 +1,5 @@
+import re
+
 from rank_bm25 import BM25Okapi  # type: ignore[import-untyped]
 
 from personal_assistant.objects.memory import Memory
@@ -13,8 +15,8 @@ class Retriever:
         self.bm25 = BM25Okapi(self.tokenized_memories) if self.tokenized_memories else None
 
     def _tokenize(self, text: str) -> list[str]:
-        """Tokenize the given text into a list of words."""
-        return text.lower().split()
+        """Tokenize the given text into lowercase words, ignoring punctuation."""
+        return re.findall(r"\w+", text.lower())
 
     def retrieve_relevant_memories(self, query: str, top_n: int = 5) -> list[Memory]:
         """Retrieve relevant memories based on the given query."""
