@@ -1,4 +1,6 @@
 
+from collections.abc import Generator
+
 import pytest
 
 from personal_assistant.application.app import Application
@@ -13,7 +15,7 @@ def test_generate_response(app):
     """Test the generate_response method of the Application class."""
     query = "Hello"
     response = app.generate_response(query)
-    assert isinstance(response, str)
+    assert isinstance(response, Generator)
 
 def test_episode_creation(app):
     """Test that an episode is created when the Application is initialized."""
@@ -40,4 +42,4 @@ def test_generate_response_using_last_n_messages(app):
     _ = app.generate_response(first_query)
     second_query = "What is the secret code I gave you?"
     response = app.generate_response(second_query)
-    assert isinstance(response, str)
+    assert isinstance(response, Generator)

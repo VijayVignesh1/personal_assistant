@@ -35,9 +35,11 @@ def model():
 def test_contains(data, model):
     query = data["turns"]
 
-    actual_output = model.generate_response(
+    actual_output = ""
+    for resp in model.generate_response(
         query
-    )
+    ):
+        actual_output += resp
 
     turns = [Turn(role=turn["role"], content=turn["content"]) for turn in query] + [Turn(role="assistant", content=actual_output)]
 

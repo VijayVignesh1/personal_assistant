@@ -81,7 +81,10 @@ class MemoryBuilder:
         try:
             for chunk in message_chunks:
                 input_context = [{'role': 'system', 'content': system_context}, {'role': 'user', 'content': chunk}]
-                prospect_memories = json.loads(self.llm_model(input_context))
+                memory_response = ""
+                for token in self.llm_model(input_context):
+                    memory_response += token
+                prospect_memories = json.loads(memory_response)
                 # step 3: narrow down the important memories
                 filtered_memories = [Memory(content=mem["content"], 
                                             timestamp=str(datetime.datetime.now(tz=datetime.UTC)), 

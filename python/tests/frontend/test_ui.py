@@ -1,3 +1,5 @@
+from collections.abc import Generator
+
 import pytest
 
 from personal_assistant.application.app import Application
@@ -18,4 +20,4 @@ def test_display_message_with_history(app):
 
     response = ui._chat(message, history)
 
-    assert isinstance(response, str)
+    assert isinstance(response, Generator)

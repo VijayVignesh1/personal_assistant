@@ -35,7 +35,10 @@ def test_agent_name_recall(golden: Golden, api_key: str):
     llm_model = causalLM(model_name=MODEL_NAME)
     response_generator = ResponseGenerator(model=llm_model)
     messages = [{"role": "user", "content": golden.input},] + [{"role": "system", "content": ctx} for ctx in golden.context]
-    response = response_generator.generate_response(messages)
+    response = ""
+    for resp in response_generator.generate_response(messages):
+        response += resp
+        
     model = GeminiModel(
         model="models/gemini-3.5-flash-lite",
         api_key=api_key,
