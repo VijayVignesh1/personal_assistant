@@ -1,3 +1,5 @@
+from collections.abc import Generator
+
 import pytest
 
 from personal_assistant.models.causalLM import causalLM
@@ -17,18 +19,20 @@ def test_generate_response(model):
     query = [{'role': 'user', 'content': 'What is the capital of France?'}]
     response = model.generate_response(query)
 
-    assert isinstance(response, str)
+    assert isinstance(response, Generator)
 
 def test_wrong_format_query(model):
     """Test that a ValueError is raised for a query that is not a list of dictionaries."""
     query = "This is not a list of dictionaries"
     
     with pytest.raises(ValueError):
-        model.generate_response(query)
+        for _ in model.generate_response(query):
+            pass
 
 def test_missing_keys_in_query(model):  
     """Test that a ValueError is raised for a query with missing keys."""
     query = [{'role': 'user'}]
     
     with pytest.raises(ValueError):
-        model.generate_response(query)
+        for _ in model.generate_response(query):
+            pass

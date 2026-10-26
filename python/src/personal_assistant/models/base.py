@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Generator
 from typing import Any
 
 
@@ -9,7 +10,7 @@ class BaseLLM(ABC):
         self.model_name = model_name
 
     @abstractmethod
-    def __call__(self, query: list[dict[str, str]], *args: Any, **kwargs: Any) -> str:
+    def __call__(self, query: list[dict[str, str]], *args: Any, **kwargs: Any) -> Generator[str, None, None]:
         """Generate a response based on the given messages.
 
         Args:

@@ -1,3 +1,4 @@
+from collections.abc import Generator
 from typing import Any
 
 import gradio as gr
@@ -17,7 +18,6 @@ class UI:
         """Launch the Gradio interface."""
         self.chat_interface.launch()
         
-    def _chat(self, message: str, history: list[dict[str, Any]]) -> Any:
+    def _chat(self, message: str, history: list[dict[str, Any]]) -> Generator[str, None, None]:
         """Display a message to the user."""
-        response = self.application.generate_response(message)
-        return response
+        yield from self.application.generate_response(message)
