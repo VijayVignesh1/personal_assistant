@@ -1,5 +1,7 @@
+import numpy as np
 import pytest
 
+from personal_assistant.models.base import BaseEmbeddingModel
 from personal_assistant.objects.memory import Memory
 from personal_assistant.retriever.retrieval import Retriever
 
@@ -46,3 +48,118 @@ def test_query_with_punctuation_matches_memory():
     retrieval = Retriever(memories)
     results = retrieval.retrieve_relevant_memories(query="Who is my manager?", top_n=1)
     assert results[0].memory_id == "m1"
+
+
+# ---------------------------------------------------------------- embedding / hybrid
+
+FAKE_MODEL = "fake-embedding-model"
+
+# Hand-made unit vectors: each memory points along its own axis and each query
+# along the axis (or mix of axes) of the memories it should match.
+FAKE_VECTORS = {
+    "The user's manager is Priya.": [1.0, 0.0, 0.0],
+    "The user likes tea.": [0.0, 1.0, 0.0],
+    "The user plays chess.": [0.0, 0.0, 1.0],
+    "Who is my boss?": [0.9, 0.1, 0.0],
+    "What hot drink do I enjoy?": [0.1, 0.9, 0.0],
+    "manager drink": [-0.3, 0.9, 0.3],
+}
+
+
+class FakeEmbeddingModel(BaseEmbeddingModel):
+    def __init__(self, model_name: str = FAKE_MODEL) -> None:
+        super().__init__(model_name)
+        self.calls: list[str] = []
+
+    def __call__(self, input: str) -> bytes:
+        self.calls.append(input)
+        vector = np.array(FAKE_VECTORS[input], dtype=np.float32)
+        return (vector / np.linalg.norm(vector)).tobytes()
+
+
+def make_memory(memory_id, content, model=None, embedding=None):
+    model = model or FakeEmbeddingModel()
+    return Memory(memory_id=memory_id, content=content, timestamp="t", importance=1.0,
+                  episode_id="e",
+                  embedding=model(content) if embedding is None else embedding,
+                  model_name=model.model_name)
+
+
+@pytest.fixture
+def embedded_memories():
+    return [
+        make_memory("m1", "The user's manager is Priya."),
+        make_memory("m2", "The user likes tea."),
+        make_memory("m3", "The user plays chess."),
+    ]
+
+
+def test_embedding_method_ranks_by_cosine_similarity(embedded_memories):
+    model = FakeEmbeddingModel()
+    retrieval = Retriever(embedded_memories, embedding_model=model, method="embedding")
+
+    results = retrieval.retrieve_relevant_memories(query="Who is my boss?", top_n=3)
+    assert [m.memory_id for m in results] == ["m1", "m2", "m3"]
+
+    results = retrieval.retrieve_relevant_memories(query="What hot drink do I enjoy?", top_n=2)
+    assert [m.memory_id for m in results] == ["m2", "m1"]
+
+
+def test_embedding_method_embeds_only_the_query(embedded_memories):
+    model = FakeEmbeddingModel()
+    retrieval = Retriever(embedded_memories, embedding_model=model, method="hybrid")
+    retrieval.retrieve_relevant_memories(query="Who is my boss?")
+    assert model.calls == ["Who is my boss?"]
+
+
+def test_hybrid_method_combines_rank_scores(embedded_memories):
+    # BM25 only matches "manager" in m1; m2 and m3 score 0 and are left out of the
+    # BM25 list. The embedding ranking is m2, m3, m1.
+    # fused (k=60, w=0.5): m1 = .5/61 + .5/63, m2 = .5/61, m3 = .5/62
+    query = "manager drink"
+    retrieval = Retriever(embedded_memories, embedding_model=FakeEmbeddingModel(),
+                          method="hybrid")
+    results = retrieval.retrieve_relevant_memories(query, top_n=3)
+    assert [m.memory_id for m in results] == ["m1", "m2", "m3"]
+
+
+@pytest.mark.parametrize(("bm25_weight", "expected_first"), [(0.9, "m1"), (0.1, "m2")])
+def test_hybrid_bm25_weight_controls_fusion(embedded_memories, bm25_weight, expected_first):
+    # With rrf_k=1: m1 = w/2 + (1-w)/4 (BM25 rank 1, embedding rank 3), m2 = (1-w)/2
+    retrieval = Retriever(embedded_memories, embedding_model=FakeEmbeddingModel(),
+                          method="hybrid", bm25_weight=bm25_weight, rrf_k=1)
+    results = retrieval.retrieve_relevant_memories("manager drink", top_n=1)
+    assert results[0].memory_id == expected_first
+
+
+def test_embedding_method_skips_unusable_embeddings():
+    model = FakeEmbeddingModel()
+    other_model = FakeEmbeddingModel(model_name="other-model")
+    memories = [
+        make_memory("same_model", "The user likes tea."),
+        make_memory("other_model", "The user's manager is Priya.", model=other_model),
+        Memory(memory_id="no_embedding", content="The user's manager is Priya.",
+               timestamp="t", importance=1.0, episode_id="e", model_name=FAKE_MODEL),
+        make_memory("empty_embedding", "The user's manager is Priya.", embedding=b""),
+        make_memory("wrong_dimension", "The user's manager is Priya.",
+                    embedding=np.array([1.0, 0.0], dtype=np.float32).tobytes()),
+    ]
+    retrieval = Retriever(memories, embedding_model=model, method="embedding")
+    results = retrieval.retrieve_relevant_memories(query="Who is my boss?", top_n=5)
+    assert [m.memory_id for m in results] == ["same_model"]
+
+
+@pytest.mark.parametrize("method", ["embedding", "hybrid"])
+def test_embedding_methods_require_embedding_model(memories, method):
+    with pytest.raises(ValueError):
+        Retriever(memories, method=method)
+
+
+def test_unknown_method_raises(memories):
+    with pytest.raises(ValueError):
+        Retriever(memories, embedding_model=FakeEmbeddingModel(), method="unknown")
+
+
+def test_bm25_is_the_default_method(memories):
+    retrieval = Retriever(memories)
+    assert retrieval.method == "bm25"
