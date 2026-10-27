@@ -78,10 +78,10 @@ class Retriever:
             ranking = [i for i in ranking if scores[i] > 0]
         return ranking
 
-    def _embedding_ranking(self, query: str) -> list[int]:
+    async def _embedding_ranking(self, query: str) -> list[int]:
         """Indices of memories with a usable embedding, ordered by cosine similarity, best first."""
         assert self.embedding_model is not None, "Embedding model is not set."
-        query_vector = np.frombuffer(self.embedding_model(query), dtype=np.float32)
+        query_vector = np.frombuffer(await self.embedding_model(query), dtype=np.float32)
 
         candidates = [(i, vector) for i, vector in self.stored_embeddings
                       if vector.shape == query_vector.shape]
@@ -93,10 +93,10 @@ class Retriever:
         order = np.argsort(-similarities, kind="stable")
         return [candidates[j][0] for j in order]
 
-    def _hybrid_ranking(self, query: str) -> list[int]:
+    async def _hybrid_ranking(self, query: str) -> list[int]:
         """Memory indices ordered by weighted Reciprocal Rank Fusion of BM25 and embedding rankings."""
         bm25_ranking = self._bm25_ranking(query, positive_only=True)
-        embedding_ranking = self._embedding_ranking(query)
+        embedding_ranking = await self._embedding_ranking(query)
 
         fused: dict[int, float] = {}
         for rank, i in enumerate(bm25_ranking, start=1):
@@ -106,12 +106,12 @@ class Retriever:
 
         return sorted(fused, key=fused.__getitem__, reverse=True)
 
-    def retrieve_relevant_memories(self, query: str, top_n: int = 5) -> list[Memory]:
+    async def retrieve_relevant_memories(self, query: str, top_n: int = 5) -> list[Memory]:
         """Retrieve relevant memories based on the given query."""
         if self.method == "embedding":
-            ranked_memories = self._embedding_ranking(query)
+            ranked_memories = await self._embedding_ranking(query)
         elif self.method == "hybrid":
-            ranked_memories = self._hybrid_ranking(query)
+            ranked_memories = await self._hybrid_ranking(query)
         else:
             ranked_memories = self._bm25_ranking(query)
 
