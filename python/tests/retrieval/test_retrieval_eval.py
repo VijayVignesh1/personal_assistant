@@ -85,7 +85,7 @@ def build_memories(
             timestamp="2026-01-01T00:00:00Z",
             importance=1.0,
             episode_id="eval_episode",
-            embedding=embedding_model(item["content"]) if embedding_model else None,
+            embedding=await embedding_model(item["content"]) if embedding_model else None,
             model_name=embedding_model.model_name if embedding_model else None,
         )
         for item in dataset["memories"]
