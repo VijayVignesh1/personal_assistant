@@ -1,3 +1,6 @@
+
+import asyncio
+
 from personal_assistant.application.app import Application
 from personal_assistant.frontend.ui import UI
 
@@ -9,7 +12,7 @@ def main() -> None:
     try:
         ui.launch()
     finally:
-        application.close_episode()
+        asyncio.run(application.close_episode())
 
 
 if __name__ == "__main__":

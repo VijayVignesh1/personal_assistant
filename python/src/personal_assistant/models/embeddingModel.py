@@ -1,3 +1,4 @@
+import asyncio
 import warnings
 
 import torch
@@ -32,13 +33,28 @@ class embeddingModel(BaseEmbeddingModel):
             batch_size = last_hidden_states.shape[0]
             return last_hidden_states[torch.arange(batch_size, device=last_hidden_states.device), sequence_lengths]
 
-    def __call__(self, 
-                 input: str) -> bytes:
-        """Generate an embedding for the given input."""
-        texts = self.tokenizer(input, return_tensors="pt", padding=True, truncation=True).to(self.device)
-        with torch.no_grad():
+    def _generate_embedding(self, input: str) -> bytes:
+        """Generate an embedding synchronously."""
+        texts = self.tokenizer(
+            input,
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+        ).to(self.device)
+
+        with torch.inference_mode():
             outputs = self.model(**texts)
 
-        pooled_output = self._last_token_pool(outputs.last_hidden_state, texts['attention_mask'])
+        pooled_output = self._last_token_pool(
+            outputs.last_hidden_state,
+            texts["attention_mask"],
+        )
+
         embedding = F.normalize(pooled_output.float(), p=2, dim=1)
+
         return embedding.squeeze().cpu().numpy().tobytes()  # type: ignore[no-any-return]
+
+    async def __call__(self, 
+                 input: str) -> bytes:
+        """Generate an embedding for the given input."""
+        return await asyncio.to_thread(self._generate_embedding, input)

@@ -1,4 +1,4 @@
-from collections.abc import Generator
+from collections.abc import AsyncGenerator
 
 from personal_assistant.models.base import BaseLLM
 
@@ -31,7 +31,7 @@ class ResponseGenerator:
 
             The current conversation and any retrieved memories are provided as context. Use them only when they are relevant to the user's request.
         """
-    def generate_response(self, query: list[dict[str, str]]) -> Generator[str, None, None]:
+    async def generate_response(self, query: list[dict[str, str]]) -> AsyncGenerator[str, None]:
         """Generate a response based on the given messages, memories, and external context.
         
         Args:
@@ -48,6 +48,6 @@ class ResponseGenerator:
         
         full_query = [{"role": "system", "content": self.prompt}] + query
 
-
-        yield from self.model(full_query)
+        async for token in self.model(full_query):
+            yield token
         
