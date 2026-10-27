@@ -1,4 +1,4 @@
-from collections.abc import Generator
+from collections.abc import AsyncGenerator
 
 import pytest
 
@@ -14,25 +14,27 @@ def model():
     return response_generator
 
 
-def test_generate_response(model):
+@pytest.mark.asyncio
+async def test_generate_response(model):
     """Test the response generation functionality."""
     query = [{'role': 'user', 'content': 'What is the capital of France?'}]
     response = model.generate_response(query)
+    assert isinstance(response, AsyncGenerator)
 
-    assert isinstance(response, Generator)
-
-def test_wrong_format_query(model):
+@pytest.mark.asyncio
+async def test_wrong_format_query(model):
     """Test that a ValueError is raised for a query that is not a list of dictionaries."""
     query = "This is not a list of dictionaries"
     
     with pytest.raises(ValueError):
-        for _ in model.generate_response(query):
+        async for _ in model.generate_response(query):
             pass
 
-def test_missing_keys_in_query(model):  
+@pytest.mark.asyncio
+async def test_missing_keys_in_query(model):  
     """Test that a ValueError is raised for a query with missing keys."""
     query = [{'role': 'user'}]
     
     with pytest.raises(ValueError):
-        for _ in model.generate_response(query):
+        async for _ in model.generate_response(query):
             pass

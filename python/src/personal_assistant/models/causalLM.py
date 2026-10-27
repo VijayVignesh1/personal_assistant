@@ -1,12 +1,13 @@
+import asyncio
 import warnings
-from collections.abc import Generator
+from collections.abc import AsyncGenerator
 from threading import Thread
 from typing import Any
 
 import ollama
 import torch
-from ollama import ResponseError
-from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
+from ollama import AsyncClient, ResponseError
+from transformers import AsyncTextIteratorStreamer, AutoModelForCausalLM, AutoTokenizer
 
 from personal_assistant.models.base import BaseLLM
 
@@ -24,9 +25,7 @@ class causalLM(BaseLLM):
                 warnings.warn("Running on CPU, performance may be slower.")
             self.tokenizer = AutoTokenizer.from_pretrained(model_name)
             self.model = AutoModelForCausalLM.from_pretrained(model_name).to(self.device)  # type: ignore[arg-type]
-            self.streamer = TextIteratorStreamer(
-            self.tokenizer, skip_prompt=True, skip_special_tokens=True
-        )
+            
         except OSError as e:
             warnings.warn(f"Failed to initialize the model: {e}")
 
@@ -45,18 +44,20 @@ class causalLM(BaseLLM):
         if self.model is None and self.ollama is None:
             raise RuntimeError("Failed to initialize both HuggingFace and Ollama models. Give a valid model name.")
 
-    def __call__(self, query: list[dict[str, str]], **kwargs: Any) -> Generator[str, None, None]:
+    async def __call__(self, query: list[dict[str, str]], **kwargs: Any) -> AsyncGenerator[str, None]:
         """Generate a response based on the given query using the initialized model."""
         if self.model is not None:
-            return self._call_huggingface(query, **kwargs)
+            async for chunk in self._call_huggingface(query, **kwargs):
+                yield chunk
         elif self.ollama is not None:
-            return self._call_ollama(query, **kwargs)
+            async for chunk in self._call_ollama(query, **kwargs):
+                yield chunk
         else:
             raise RuntimeError("No model is initialized.")
         
-    def _call_huggingface(self, query: list[dict[str, str]], 
+    async def _call_huggingface(self, query: list[dict[str, str]], 
                  **kwargs: Any
-                 ) -> Generator[str, None, None]:
+                 ) -> AsyncGenerator[str, None]:
         """Generate a response based on the given messages.
 
         Args:
@@ -77,6 +78,9 @@ class causalLM(BaseLLM):
             return_tensors="pt",
         ).to(self.device)  # type: ignore[union-attr]
 
+        self.streamer = AsyncTextIteratorStreamer(
+                    self.tokenizer, skip_prompt=True, skip_special_tokens=True
+                )
         generation_kwargs = dict(
             **model_inputs,
             streamer=self.streamer,
@@ -87,17 +91,21 @@ class causalLM(BaseLLM):
             top_p=kwargs.get("top_p", 0.9),
         )
         with torch.inference_mode():
-            thread = Thread(target=self.model.generate, kwargs=generation_kwargs)  # type: ignore[union-attr]
+            thread = Thread(target=self.model.generate, kwargs=generation_kwargs, daemon=True)  # type: ignore[union-attr]
             thread.start()
 
-        yield from self.streamer
+        async for chunk in self.streamer:
+            yield chunk
 
-    def _call_ollama(self, query: list[dict[str, str]], **kwargs: Any) -> Generator[str, None, None]:
+        await asyncio.to_thread(thread.join)
+
+    async def _call_ollama(self, query: list[dict[str, str]], **kwargs: Any) -> AsyncGenerator[str, None]:
         """Generate a response using the Ollama model."""
         if not isinstance(query, list) or not all(isinstance(msg, dict) and "role" in msg and "content" in msg for msg in query):
             raise ValueError("Query must be a list of dictionaries with 'role' and 'content' keys.")
 
-        response = ollama.chat(model=self.model_name, messages=query, stream=True, **kwargs)
+        response = await AsyncClient().chat(model=self.model_name, messages=query, stream=True, **kwargs)
 
-        yield from (chunk.message.content for chunk in response)  # type: ignore[misc]
+        async for chunk in response:
+            yield chunk.message.content  # type: ignore[misc]
         

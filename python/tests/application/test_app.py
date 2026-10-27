@@ -1,5 +1,5 @@
-
-from collections.abc import Generator
+import asyncio
+from collections.abc import AsyncGenerator
 
 import pytest
 
@@ -15,7 +15,7 @@ def test_generate_response(app):
     """Test the generate_response method of the Application class."""
     query = "Hello"
     response = app.generate_response(query)
-    assert isinstance(response, Generator)
+    assert isinstance(response, AsyncGenerator)
 
 def test_episode_creation(app):
     """Test that an episode is created when the Application is initialized."""
@@ -27,7 +27,7 @@ def test_episode_completion(app):
     """Test that an episode is marked as ended correctly."""
     db = app.db
     episode_id = app.episode_id
-    app.close_episode()
+    asyncio.run(app.close_episode())
     
     episode = db.get_episode(episode_id) 
 
@@ -39,7 +39,7 @@ def test_episode_completion(app):
 def test_generate_response_using_last_n_messages(app):
     """Test generating a response using the last few messages."""
     first_query = "The secret code is BLUE1234"
-    _ = app.generate_response(first_query)
+    app.generate_response(first_query)
     second_query = "What is the secret code I gave you?"
     response = app.generate_response(second_query)
-    assert isinstance(response, Generator)
+    assert isinstance(response, AsyncGenerator)

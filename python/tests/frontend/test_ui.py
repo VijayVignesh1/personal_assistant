@@ -1,4 +1,4 @@
-from collections.abc import Generator
+from collections.abc import AsyncGenerator
 
 import pytest
 
@@ -11,7 +11,8 @@ def app(tmp_path):
     db_path = tmp_path / "test.db"
     return Application(db_path=str(db_path))
 
-def test_display_message_with_history(app):
+@pytest.mark.asyncio
+async def test_display_message_with_history(app):
     """Test the _chat method of the UI class with a message and history."""
     ui = UI(app)
 
@@ -20,4 +21,4 @@ def test_display_message_with_history(app):
 
     response = ui._chat(message, history)
 
-    assert isinstance(response, Generator)
+    assert isinstance(response, AsyncGenerator)

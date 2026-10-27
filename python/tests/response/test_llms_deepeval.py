@@ -27,16 +27,17 @@ def model():
     response_generator = ResponseGenerator(model=llm_model)
     return response_generator
 
+@pytest.mark.asyncio
 @pytest.mark.gpu
 @pytest.mark.parametrize(
     "data",
     CONTAINS_DATASET,
 )    
-def test_contains(data, model):
+async def test_contains(data, model):
     query = data["turns"]
 
     actual_output = ""
-    for resp in model.generate_response(
+    async for resp in model.generate_response(
         query
     ):
         actual_output += resp
