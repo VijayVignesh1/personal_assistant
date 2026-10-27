@@ -58,7 +58,7 @@ class Application:
         retriever = Retriever(memories=self.db.get_all_memories(),
                               embedding_model=self.embedding_model,
                               method=self.retrieval_method)
-        relevant_memories = retriever.retrieve_relevant_memories(query=query, top_n=5)
+        relevant_memories = await retriever.retrieve_relevant_memories(query=query, top_n=5)
         for memory in relevant_memories:
             context.append({'role': 'system', 'content': memory.content})
 

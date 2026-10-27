@@ -113,7 +113,7 @@ async def evaluate(
 
     per_query = []
     for q in dataset["queries"]:
-        retrieved = [m.memory_id for m in retriever.retrieve_relevant_memories(q["query"], top_n=k)]
+        retrieved = [m.memory_id for m in await retriever.retrieve_relevant_memories(q["query"], top_n=k)]
         relevant = set(q["relevant_memory_ids"])
         per_query.append({
             "query_id": q["query_id"],
