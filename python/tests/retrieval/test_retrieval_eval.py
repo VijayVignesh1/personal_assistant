@@ -11,6 +11,7 @@ Print the full evaluation report, including the BM25 / embedding / hybrid compar
     uv run python tests/retrieval/test_retrieval_eval.py [embedding_model_name]
 """
 
+import asyncio
 import json
 import sys
 from collections.abc import Sequence
@@ -74,7 +75,7 @@ def load_dataset(path: Path = DATASET_PATH) -> dict[str, Any]:
     return data
 
 
-def build_memories(
+async def build_memories(
     dataset: dict[str, Any], embedding_model: BaseEmbeddingModel | None = None
 ) -> list[Memory]:
     """Build the dataset memories, embedded with ``embedding_model`` as MemoryBuilder does."""
@@ -92,7 +93,7 @@ def build_memories(
     ]
 
 
-def evaluate(
+async def evaluate(
     dataset: dict[str, Any],
     k: int = TOP_K,
     memories: list[Memory] | None = None,
@@ -105,7 +106,7 @@ def evaluate(
     Returns per-query results and average metrics, overall and per query type.
     """
     if memories is None:
-        memories = build_memories(dataset, embedding_model)
+        memories = await build_memories(dataset, embedding_model)
     retriever = Retriever(
         memories, embedding_model=embedding_model, method=method, bm25_weight=bm25_weight
     )
@@ -158,13 +159,13 @@ def format_report(results: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def compare_methods(
+async def compare_methods(
     dataset: dict[str, Any], embedding_model: BaseEmbeddingModel, k: int = TOP_K
 ) -> dict[str, dict[str, Any]]:
     """Evaluate every configuration in COMPARED_METHODS on the same embedded memories."""
-    memories = build_memories(dataset, embedding_model)
+    memories = await build_memories(dataset, embedding_model)
     return {
-        label: evaluate(dataset, k, memories, embedding_model, method, bm25_weight)
+        label: await evaluate(dataset, k, memories, embedding_model, method, bm25_weight)
         for label, method, bm25_weight in COMPARED_METHODS
     }
 
@@ -220,8 +221,9 @@ def test_dataset_is_consistent(dataset: dict[str, Any]) -> None:
         assert q["type"] in {"lexical", "paraphrase"}
 
 
-def test_retrieval_evaluation_runs(dataset: dict[str, Any]) -> None:
-    results = evaluate(dataset)
+@pytest.mark.asyncio
+async def test_retrieval_evaluation_runs(dataset: dict[str, Any]) -> None:
+    results = await evaluate(dataset)
     print("\n" + format_report(results))
 
     assert len(results["per_query"]) == len(dataset["queries"])
@@ -231,10 +233,11 @@ def test_retrieval_evaluation_runs(dataset: dict[str, Any]) -> None:
                 assert 0.0 <= value <= 1.0
 
 
-def test_retrieval_method_comparison(
+@pytest.mark.asyncio
+async def test_retrieval_method_comparison(
     dataset: dict[str, Any], embedding_model: BaseEmbeddingModel
 ) -> None:
-    results_by_method = compare_methods(dataset, embedding_model)
+    results_by_method = await compare_methods(dataset, embedding_model)
     print("\n" + format_comparison(results_by_method, embedding_model.model_name))
 
     assert list(results_by_method) == [label for label, _, _ in COMPARED_METHODS]
@@ -246,9 +249,14 @@ def test_retrieval_method_comparison(
                     assert 0.0 <= value <= 1.0
 
 
-if __name__ == "__main__":
+async def main() -> None:
     data = load_dataset()
-    print(format_report(evaluate(data)))
+    print(format_report(await evaluate(data)))
     model = embeddingModel(*sys.argv[1:2])
     print()
-    print(format_comparison(compare_methods(data, model), model.model_name))
+    results_by_method = await compare_methods(data, model)
+    print(format_comparison(results_by_method, model.model_name))
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
