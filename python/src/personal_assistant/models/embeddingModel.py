@@ -1,3 +1,4 @@
+import asyncio
 import warnings
 
 import numpy as np
@@ -23,9 +24,13 @@ class embeddingModel(BaseEmbeddingModel):
 
         self.model = SentenceTransformer(model_name, device=self.device)
 
-    def __call__(self,
-                 input: str) -> bytes:
+    def _generate_embedding(self, input: str) -> bytes:
         """Generate a normalized float32 embedding for the given input."""
         embedding = self.model.encode(input, normalize_embeddings=True, convert_to_numpy=True)
         data: bytes = np.asarray(embedding, dtype=np.float32).tobytes()
         return data
+
+    async def __call__(self, 
+                 input: str) -> bytes:
+        """Generate an embedding for the given input."""
+        return await asyncio.to_thread(self._generate_embedding, input)

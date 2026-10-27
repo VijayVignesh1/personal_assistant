@@ -1,10 +1,13 @@
+import asyncio
 import warnings
+from collections.abc import AsyncGenerator
+from threading import Thread
 from typing import Any
 
 import ollama
 import torch
-from ollama import ResponseError
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from ollama import AsyncClient, ResponseError
+from transformers import AsyncTextIteratorStreamer, AutoModelForCausalLM, AutoTokenizer
 
 from personal_assistant.models.base import BaseLLM
 
@@ -22,6 +25,7 @@ class causalLM(BaseLLM):
                 warnings.warn("Running on CPU, performance may be slower.")
             self.tokenizer = AutoTokenizer.from_pretrained(model_name)
             self.model = AutoModelForCausalLM.from_pretrained(model_name).to(self.device)  # type: ignore[arg-type]
+            
         except OSError as e:
             warnings.warn(f"Failed to initialize the model: {e}")
 
@@ -40,18 +44,20 @@ class causalLM(BaseLLM):
         if self.model is None and self.ollama is None:
             raise RuntimeError("Failed to initialize both HuggingFace and Ollama models. Give a valid model name.")
 
-    def __call__(self, query: list[dict[str, str]], **kwargs: Any) -> str:
+    async def __call__(self, query: list[dict[str, str]], **kwargs: Any) -> AsyncGenerator[str, None]:
         """Generate a response based on the given query using the initialized model."""
         if self.model is not None:
-            return self._call_huggingface(query, **kwargs)
+            async for chunk in self._call_huggingface(query, **kwargs):
+                yield chunk
         elif self.ollama is not None:
-            return self._call_ollama(query, **kwargs)
+            async for chunk in self._call_ollama(query, **kwargs):
+                yield chunk
         else:
             raise RuntimeError("No model is initialized.")
         
-    def _call_huggingface(self, query: list[dict[str, str]], 
+    async def _call_huggingface(self, query: list[dict[str, str]], 
                  **kwargs: Any
-                 ) -> str:
+                 ) -> AsyncGenerator[str, None]:
         """Generate a response based on the given messages.
 
         Args:
@@ -68,27 +74,38 @@ class causalLM(BaseLLM):
             query,
             tokenize=True,
             add_generation_prompt=True,
+            return_dict=True,
             return_tensors="pt",
         ).to(self.device)  # type: ignore[union-attr]
 
+        self.streamer = AsyncTextIteratorStreamer(
+                    self.tokenizer, skip_prompt=True, skip_special_tokens=True
+                )
+        generation_kwargs = dict(
+            **model_inputs,
+            streamer=self.streamer,
+            max_new_tokens=kwargs.get("max_new_tokens", 256),
+            max_length=None,
+            do_sample=True,
+            temperature=kwargs.get("temperature", 0.7),
+            top_p=kwargs.get("top_p", 0.9),
+        )
         with torch.inference_mode():
-            response = self.model.generate(**model_inputs,  #type: ignore[union-attr]
-                                       max_new_tokens=kwargs.get("max_new_tokens", 256), 
-                                       max_length=None,
-                                       do_sample=True, 
-                                       temperature=kwargs.get("temperature", 0.7), 
-                                       top_p=kwargs.get("top_p", 0.9))  
+            thread = Thread(target=self.model.generate, kwargs=generation_kwargs, daemon=True)  # type: ignore[union-attr]
+            thread.start()
 
-        output_ids = response[0][len(model_inputs["input_ids"][0]):]  # Get only the generated part
+        async for chunk in self.streamer:
+            yield chunk
 
-        output = self.tokenizer.decode(output_ids, skip_special_tokens=True)
+        await asyncio.to_thread(thread.join)
 
-        return output if isinstance(output, str) else output[0]  # skip batch decode for now
-
-    def _call_ollama(self, query: list[dict[str, str]], **kwargs: Any) -> str:
+    async def _call_ollama(self, query: list[dict[str, str]], **kwargs: Any) -> AsyncGenerator[str, None]:
         """Generate a response using the Ollama model."""
         if not isinstance(query, list) or not all(isinstance(msg, dict) and "role" in msg and "content" in msg for msg in query):
             raise ValueError("Query must be a list of dictionaries with 'role' and 'content' keys.")
 
-        response = ollama.chat(model=self.model_name, messages=query, **kwargs)
-        return response.message.content if hasattr(response.message, "content") else "" 
+        response = await AsyncClient().chat(model=self.model_name, messages=query, stream=True, **kwargs)
+
+        async for chunk in response:
+            yield chunk.message.content  # type: ignore[misc]
+        

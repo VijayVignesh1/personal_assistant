@@ -1,3 +1,4 @@
+from collections.abc import AsyncGenerator
 from typing import Any
 
 import gradio as gr
@@ -17,7 +18,7 @@ class UI:
         """Launch the Gradio interface."""
         self.chat_interface.launch()
         
-    def _chat(self, message: str, history: list[dict[str, Any]]) -> Any:
+    async def _chat(self, message: str, history: list[dict[str, Any]]) -> AsyncGenerator[str, None]:
         """Display a message to the user."""
-        response = self.application.generate_response(message)
-        return response
+        async for chunk in self.application.generate_response(message):
+            yield chunk

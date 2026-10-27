@@ -1,5 +1,6 @@
 import datetime
 import uuid
+from collections.abc import AsyncGenerator
 from pathlib import Path
 
 from personal_assistant.db.db import Database
@@ -34,7 +35,7 @@ class Application:
 
         self.db.create_episode(Episode(episode_id=self.episode_id, started_at=self.started_at))
 
-    def generate_response(self, query: str) -> str:
+    async def generate_response(self, query: str) -> AsyncGenerator[str, None]:
         """Generate a response based on the given query."""
 
         # step 1: add message to the episode
@@ -61,9 +62,11 @@ class Application:
         for memory in relevant_memories:
             context.append({'role': 'system', 'content': memory.content})
 
-        print(context)
-
-        response =  self.response_generator.generate_response(context)
+        # response =  self.response_generator.generate_response(context)
+        response = ""
+        async for chunk in self.response_generator.generate_response(context):
+            response += chunk
+            yield response
 
         # step 3: add the generated response to the episode
         response_id = str(uuid.uuid4())
@@ -74,14 +77,12 @@ class Application:
                                     timestamp=response_time,
                                     role='assistant'))
 
-        return response
-
-    def close_episode(self) -> None:
+    async def close_episode(self) -> None:
         """Ensure the episode is ended when closing the episode and create memories."""
         print(f"Closing episode {self.episode_id} at {datetime.datetime.now(tz=datetime.UTC)!s}")
         # create memories for the episode
         all_messages = self.db.get_messages_by_episode(episode_id=self.episode_id)
-        memories = self.memory_builder.create_memories(all_messages, episode_id=self.episode_id)
+        memories = await self.memory_builder.create_memories(all_messages, episode_id=self.episode_id)
         self.db.save_memory(memories)
         print(f"Saved memories for episode {[memory.content for memory in memories]}")
         self.ended_at = str(datetime.datetime.now(tz=datetime.UTC))

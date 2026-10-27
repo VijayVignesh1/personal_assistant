@@ -72,7 +72,7 @@ class MemoryBuilder:
             ]
         """
     
-    def create_memories(self, messages: list[Message], episode_id: str) -> list[Memory]:
+    async def create_memories(self, messages: list[Message], episode_id: str) -> list[Memory]:
         """Create memories for the given episode ID."""
         # step 1: chunk the input in pieces
         message_chunks = self._chunk_input(" ".join(f"{msg.role};;{msg.content}" for msg in messages))
@@ -81,14 +81,17 @@ class MemoryBuilder:
         try:
             for chunk in message_chunks:
                 input_context = [{'role': 'system', 'content': system_context}, {'role': 'user', 'content': chunk}]
-                prospect_memories = json.loads(self.llm_model(input_context))
+                memory_response = ""
+                async for token in self.llm_model(input_context):
+                    memory_response += token
+                prospect_memories = json.loads(memory_response)
                 # step 3: narrow down the important memories
                 filtered_memories = [Memory(content=mem["content"], 
                                             timestamp=str(datetime.datetime.now(tz=datetime.UTC)), 
                                             importance=float(mem["importance"]), 
                                             episode_id=episode_id, 
                                             memory_id=str(uuid.uuid4()),
-                                            embedding = self.embedding_model(mem["content"]),
+                                            embedding=await self.embedding_model(mem["content"]),
                                             model_name=self.embedding_model.model_name) for mem in prospect_memories if float(mem["importance"]) > 0.5]
                 self.memories.extend(filtered_memories)
         except json.JSONDecodeError as e:

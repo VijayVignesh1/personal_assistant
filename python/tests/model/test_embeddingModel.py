@@ -1,4 +1,6 @@
 
+import pytest
+
 from personal_assistant.models.embeddingModel import embeddingModel
 
 
@@ -9,10 +11,11 @@ def test_embeddingModel_instance():
     assert isinstance(model, embeddingModel)
 
 
-def test_embeddingModel_call():
+@pytest.mark.asyncio
+async def test_embeddingModel_call():
     model = embeddingModel()
     input_text = "This is a test sentence."
-    embedding = model(input_text)
+    embedding = await model(input_text)
     assert isinstance(embedding, bytes)
     assert len(embedding) > 0
 
