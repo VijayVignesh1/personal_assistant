@@ -14,7 +14,7 @@ class Retriever:
     def __init__(self,
                  memories: list[Memory],
                  embedding_model: BaseEmbeddingModel | None = None,
-                 method: RetrievalMethod = "bm25",
+                 method: RetrievalMethod = "embedding",
                  bm25_weight: float = 0.5,
                  rrf_k: int = 60) -> None:
         """Initialize the Retriever class.

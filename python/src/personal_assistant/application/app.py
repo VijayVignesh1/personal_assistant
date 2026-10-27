@@ -20,7 +20,7 @@ class Application:
                  db_path: str | Path = DB_PATH,
                  llm_model_name: str = "HuggingFaceTB/SmolLM2-135M-Instruct",
                  embedding_model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
-                 retrieval_method: RetrievalMethod = "bm25",
+                 retrieval_method: RetrievalMethod = "embedding",
                  ) -> None:
         """Initialize the Application class."""
         self.llm_model = causalLM(model_name=llm_model_name)

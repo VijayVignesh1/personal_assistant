@@ -13,18 +13,18 @@ def memories():
 
 @pytest.mark.asyncio
 async def test_retrieval_instance(memories):
-    retrieval = Retriever(memories)
+    retrieval = Retriever(memories, method="bm25")
     assert retrieval is not None
 
 @pytest.mark.asyncio
 async def test_retrieval_methods(memories):
-    retrieval = Retriever(memories)
+    retrieval = Retriever(memories, method="bm25")
     assert hasattr(retrieval, "retrieve_relevant_memories")
     assert callable(retrieval.retrieve_relevant_memories)
 
 @pytest.mark.asyncio
 async def test_retrieve_relevant_memories_method(memories):
-    retrieval = Retriever(memories)
+    retrieval = Retriever(memories, method="bm25")
     relevant_memories = await retrieval.retrieve_relevant_memories(query="test memory")
     assert isinstance(relevant_memories, list)
     assert all(isinstance(memory, Memory) for memory in relevant_memories)
@@ -32,7 +32,7 @@ async def test_retrieve_relevant_memories_method(memories):
 
 
 def test_tokenize_ignores_punctuation(memories):
-    retrieval = Retriever(memories)
+    retrieval = Retriever(memories, method="bm25")
     assert retrieval._tokenize("Who is my manager?") == ["who", "is", "my", "manager"]
     assert retrieval._tokenize("Tell me about Sofia.") == ["tell", "me", "about", "sofia"]
     assert retrieval._tokenize("The user's laptop, a ThinkPad!") == [
@@ -50,7 +50,7 @@ async def test_query_with_punctuation_matches_memory():
         Memory(memory_id="m3", content="The user plays chess.", timestamp="t",
                importance=1.0, episode_id="e"),
     ]
-    retrieval = Retriever(memories)
+    retrieval = Retriever(memories, method="bm25")
     results = await retrieval.retrieve_relevant_memories(query="Who is my manager?", top_n=1)
     assert results[0].memory_id == "m1"
 
@@ -170,6 +170,11 @@ def test_unknown_method_raises(memories):
         Retriever(memories, embedding_model=FakeEmbeddingModel(), method="unknown")
 
 
-def test_bm25_is_the_default_method(memories):
-    retrieval = Retriever(memories)
-    assert retrieval.method == "bm25"
+def test_embedding_is_the_default_method(memories):
+    retrieval = Retriever(memories, embedding_model=FakeEmbeddingModel())
+    assert retrieval.method == "embedding"
+
+
+def test_default_method_requires_embedding_model(memories):
+    with pytest.raises(ValueError):
+        Retriever(memories)
