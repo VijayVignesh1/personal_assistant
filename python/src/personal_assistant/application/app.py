@@ -10,7 +10,7 @@ from personal_assistant.models.embeddingModel import embeddingModel
 from personal_assistant.objects.episode import Episode
 from personal_assistant.objects.message import Message
 from personal_assistant.response.response_generator import ResponseGenerator
-from personal_assistant.retriever.retrieval import Retriever
+from personal_assistant.retriever.retrieval import RetrievalMethod, Retriever
 
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
 DB_PATH = PROJECT_ROOT / "database" / "personal_assistant.db"
@@ -19,11 +19,13 @@ class Application:
     def __init__(self, 
                  db_path: str | Path = DB_PATH,
                  llm_model_name: str = "HuggingFaceTB/SmolLM2-135M-Instruct",
-                 embedding_model_name: str = "Qwen/Qwen3-Embedding-0.6B",
+                 embedding_model_name: str = "sentence-transformers/all-MiniLM-L6-v2",
+                 retrieval_method: RetrievalMethod = "embedding",
                  ) -> None:
         """Initialize the Application class."""
         self.llm_model = causalLM(model_name=llm_model_name)
         self.embedding_model = embeddingModel(model_name=embedding_model_name)
+        self.retrieval_method: RetrievalMethod = retrieval_method
         self.response_generator = ResponseGenerator(model=self.llm_model)
         self.memory_builder = MemoryBuilder(llm_model=self.llm_model, embedding_model=self.embedding_model)
         self.db = Database(db_path=db_path)
@@ -53,8 +55,10 @@ class Application:
             context.append({'role': message.role, 'content': message.content})
 
         # step 2a: retrieve relevant memories for context augmentation
-        retriever = Retriever(memories=self.db.get_all_memories())
-        relevant_memories = retriever.retrieve_relevant_memories(query=query, top_n=5)
+        retriever = Retriever(memories=self.db.get_all_memories(),
+                              embedding_model=self.embedding_model,
+                              method=self.retrieval_method)
+        relevant_memories = await retriever.retrieve_relevant_memories(query=query, top_n=5)
         for memory in relevant_memories:
             context.append({'role': 'system', 'content': memory.content})
 
