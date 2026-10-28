@@ -25,3 +25,6 @@ __pycache__/
 
 # deepeval
 *.deepeval/
+
+# chainlit
+*.chainlit/
