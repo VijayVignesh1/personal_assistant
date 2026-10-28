@@ -29,3 +29,11 @@ class BaseEmbeddingModel(ABC):
     async def __call__(self, input: str) -> bytes:
         """Generate an embedding for the given input."""
         raise NotImplementedError("Subclasses must implement this method.")
+
+    async def embed_query(self, input: str) -> bytes:
+        """Generate an embedding for a search query.
+
+        Models that encode queries differently from documents (e.g. with an instruction
+        prompt) override this. By default a query is embedded like any other input.
+        """
+        return await self(input)
