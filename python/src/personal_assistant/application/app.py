@@ -66,7 +66,7 @@ class Application:
         response = ""
         async for chunk in self.response_generator.generate_response(context):
             response += chunk
-            yield response
+            yield chunk
 
         # step 3: add the generated response to the episode
         response_id = str(uuid.uuid4())
