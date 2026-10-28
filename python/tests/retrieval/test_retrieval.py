@@ -119,6 +119,39 @@ async def test_embedding_method_embeds_only_the_query(embedded_memories):
     assert model.calls == ["Who is my boss?"]
 
 
+class FakeQueryPromptModel(FakeEmbeddingModel):
+    """Encodes queries differently from documents, like a model with a query prompt."""
+
+    def __init__(self, model_name: str = FAKE_MODEL) -> None:
+        super().__init__(model_name)
+        self.query_calls: list[str] = []
+
+    async def embed_query(self, input: str) -> bytes:
+        self.query_calls.append(input)
+        # points at m3, while the plain embedding of the same text points at m1
+        return np.array([0.0, 0.0, 1.0], dtype=np.float32).tobytes()
+
+
+@pytest.mark.asyncio
+async def test_base_embed_query_defaults_to_call():
+    model = FakeEmbeddingModel()
+    assert await model.embed_query("Who is my boss?") == await model("Who is my boss?")
+
+
+@pytest.mark.parametrize("method", ["embedding", "hybrid"])
+@pytest.mark.asyncio
+async def test_retriever_embeds_query_with_embed_query(embedded_memories, method):
+    model = FakeQueryPromptModel()
+    retrieval = Retriever(embedded_memories, embedding_model=model, method=method)
+
+    results = await retrieval.retrieve_relevant_memories(query="Who is my boss?", top_n=1)
+
+    if method == "embedding":
+        assert results[0].memory_id == "m3"  # ranked with the embed_query vector
+    assert model.query_calls == ["Who is my boss?"]
+    assert model.calls == []  # stored memory embeddings are not recomputed
+
+
 @pytest.mark.asyncio
 async def test_hybrid_method_combines_rank_scores(embedded_memories):
     # BM25 only matches "manager" in m1; m2 and m3 score 0 and are left out of the

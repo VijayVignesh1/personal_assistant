@@ -21,8 +21,8 @@ class Retriever:
 
         Args:
             memories: The memories to search.
-            embedding_model: Model used to embed the query. Memory embeddings are read
-                from the stored ``Memory.embedding`` bytes, never recomputed.
+            embedding_model: Model used to embed the query (via ``embed_query``). Memory
+                embeddings are read from the stored ``Memory.embedding`` bytes, never recomputed.
             method: "bm25" (keyword), "embedding" (cosine similarity) or "hybrid"
                 (weighted Reciprocal Rank Fusion of both rankings).
             bm25_weight: Weight of the BM25 ranking in hybrid mode, between 0 and 1.
@@ -81,7 +81,7 @@ class Retriever:
     async def _embedding_ranking(self, query: str) -> list[int]:
         """Indices of memories with a usable embedding, ordered by cosine similarity, best first."""
         assert self.embedding_model is not None, "Embedding model is not set."
-        query_vector = np.frombuffer(await self.embedding_model(query), dtype=np.float32)
+        query_vector = np.frombuffer(await self.embedding_model.embed_query(query), dtype=np.float32)
 
         candidates = [(i, vector) for i, vector in self.stored_embeddings
                       if vector.shape == query_vector.shape]

@@ -9,15 +9,20 @@ Run the tests:
 Print the full evaluation report, including the BM25 / embedding / hybrid comparison
 (optionally with another embedding model, e.g. Qwen/Qwen3-Embedding-0.6B):
     uv run python tests/retrieval/test_retrieval_eval.py [embedding_model_name]
+
+For a model with a query prompt (e.g. Qwen3-Embedding), the embedding and hybrid
+methods are also reported with queries encoded without the prompt ("no prompt" rows).
 """
 
 import asyncio
 import json
 import sys
+import zlib
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pytest
 
 from personal_assistant.models.base import BaseEmbeddingModel
@@ -159,29 +164,53 @@ def format_report(results: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+class WithoutQueryPrompt(BaseEmbeddingModel):
+    """Wraps an embedding model so that queries are encoded like documents (no prompt)."""
+
+    def __init__(self, model: BaseEmbeddingModel) -> None:
+        super().__init__(model.model_name)  # same name, so stored embeddings are used
+        self.model = model
+
+    async def __call__(self, input: str) -> bytes:
+        return await self.model(input)
+
+
 async def compare_methods(
     dataset: dict[str, Any], embedding_model: BaseEmbeddingModel, k: int = TOP_K
 ) -> dict[str, dict[str, Any]]:
-    """Evaluate every configuration in COMPARED_METHODS on the same embedded memories."""
+    """Evaluate every configuration in COMPARED_METHODS on the same embedded memories.
+
+    If the model encodes queries with a prompt, the embedding and hybrid configurations
+    are evaluated again without it. Memories are embedded once and reused.
+    """
     memories = await build_memories(dataset, embedding_model)
-    return {
+    results = {
         label: await evaluate(dataset, k, memories, embedding_model, method, bm25_weight)
         for label, method, bm25_weight in COMPARED_METHODS
     }
+    if getattr(embedding_model, "query_prompt_name", None):
+        plain_queries = WithoutQueryPrompt(embedding_model)
+        for label, method, bm25_weight in COMPARED_METHODS:
+            if method != "bm25":
+                results[f"{label} (no prompt)"] = await evaluate(
+                    dataset, k, memories, plain_queries, method, bm25_weight
+                )
+    return results
 
 
 def format_comparison(results_by_method: dict[str, dict[str, Any]], model_name: str) -> str:
     """One table of Hit@k, Recall@k and MRR per method and query type."""
     k = next(iter(results_by_method.values()))["k"]
     metric_names = [f"hit@{k}", f"recall@{k}", "mrr"]
+    width = max(len("method"), *(len(label) for label in results_by_method)) + 2
     lines = [
         f"Embedding model: {model_name}",
-        f"{'method':<14}{'group':<12}{'n':>4}" + "".join(f"{m:>12}" for m in metric_names),
+        f"{'method':<{width}}{'group':<12}{'n':>4}" + "".join(f"{m:>12}" for m in metric_names),
     ]
     for label, results in results_by_method.items():
         for group, stats in results["summary"].items():
             lines.append(
-                f"{label:<14}{group:<12}{stats['n']:>4}"
+                f"{label:<{width}}{group:<12}{stats['n']:>4}"
                 + "".join(f"{stats[m]:>12.3f}" for m in metric_names)
             )
     return "\n".join(lines)
@@ -240,6 +269,7 @@ async def test_retrieval_method_comparison(
     results_by_method = await compare_methods(dataset, embedding_model)
     print("\n" + format_comparison(results_by_method, embedding_model.model_name))
 
+    # the small default model has no query prompt, so there are no "no prompt" rows
     assert list(results_by_method) == [label for label, _, _ in COMPARED_METHODS]
     for results in results_by_method.values():
         assert len(results["per_query"]) == len(dataset["queries"])
@@ -247,6 +277,41 @@ async def test_retrieval_method_comparison(
             for name, value in stats.items():
                 if name != "n":
                     assert 0.0 <= value <= 1.0
+
+
+class FakeQueryPromptModel(BaseEmbeddingModel):
+    """Deterministic pseudo-random vectors; queries get a different vector than documents."""
+
+    def __init__(self) -> None:
+        super().__init__("fake-query-prompt-model")
+        self.query_prompt_name = "query"
+
+    @staticmethod
+    def _vector(text: str) -> bytes:
+        rng = np.random.default_rng(zlib.crc32(text.encode()))
+        vector = rng.standard_normal(8).astype(np.float32)
+        return (vector / np.linalg.norm(vector)).tobytes()
+
+    async def __call__(self, input: str) -> bytes:
+        return self._vector(input)
+
+    async def embed_query(self, input: str) -> bytes:
+        return self._vector("query: " + input)
+
+
+@pytest.mark.asyncio
+async def test_comparison_adds_no_prompt_rows_for_query_prompt_models(
+    dataset: dict[str, Any]
+) -> None:
+    results_by_method = await compare_methods(dataset, FakeQueryPromptModel())
+
+    expected = [label for label, _, _ in COMPARED_METHODS] + [
+        f"{label} (no prompt)" for label, method, _ in COMPARED_METHODS if method != "bm25"
+    ]
+    assert list(results_by_method) == expected
+    # the two variants rank with different query vectors
+    assert (results_by_method["embedding"]["per_query"]
+            != results_by_method["embedding (no prompt)"]["per_query"])
 
 
 async def main() -> None:
