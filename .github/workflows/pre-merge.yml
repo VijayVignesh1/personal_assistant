@@ -27,21 +27,21 @@ jobs:
           enable-cache: true
 
       - name: Set up Python
-        working-directory: python
-        run: uv python install
+        working-directory: .
+        run: uv install
 
       - name: Install dependencies
-        working-directory: python
+        working-directory: .
         run: uv sync
 
       - name: Ruff
-        working-directory: python
+        working-directory: .
         run: uv run ruff check .
 
       - name: Mypy
-        working-directory: python
+        working-directory: .
         run: uv run mypy src
 
       - name: Pytest
-        working-directory: python
+        working-directory: .
         run: uv run pytest -m "not ollama and not gpu"
