@@ -19,6 +19,7 @@ dependencies = [
     "ollama>=0.6.3",
     "google-genai>=2.31.0",
     "langchain-google-genai>=4.4.2",
+    "chainlit>=2.12.0",
 ]
 
 [dependency-groups]
