@@ -16,17 +16,12 @@ git clone <repository-url>
 cd personal_assistant
 ```
 
-### 2. Go to the python project
-```
-cd python
-```
-
-### 3. Create the virtual environent
+### 2. Create the virtual environent
 ```
 uv venv --python 3.11
 ```
 
-### 4. Activate the virtual environment
+### 3. Activate the virtual environment
 #### macOS / Linux
 ```
 source .venv/bin/activate
@@ -37,7 +32,7 @@ source .venv/bin/activate
 .venv\Scripts\activate
 ```
 
-### 5. Install dependencies
+### 4. Install dependencies
 
 Install the project and development dependencies:
 
@@ -53,7 +48,7 @@ uv pip install torch --index-url https://download.pytorch.org/whl/cu124
 ```
 
 
-### 6. Verify the installation
+### 5. Verify the installation
 
 #### Run the test suite
 ```
@@ -70,7 +65,7 @@ uv run ruff check . --fix
 uv run mypy src
 ```
 
-### 7. Adding a Package
+### 6. Adding a Package
 
 #### To add a production dependency
 ```
@@ -91,8 +86,8 @@ After adding packages, pyproject.toml and uv.lock are updated automatically.
 
 ### Starting the chat
 
-1. Execute the main program
+1. Launch the chainlit application using:
 ```
-python main.py
+chainlit run main.py -w
 ```
-2. Open the launched gradio UI using the given local URL. For example, `http://127.0.0.1:7860`
+2. It should open the browser automatically. If not, navigate to `http://localhost:8000/`

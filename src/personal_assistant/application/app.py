@@ -12,7 +12,7 @@ from personal_assistant.objects.message import Message
 from personal_assistant.response.response_generator import ResponseGenerator
 from personal_assistant.retriever.retrieval import RetrievalMethod, Retriever
 
-PROJECT_ROOT = Path(__file__).resolve().parents[4]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DB_PATH = PROJECT_ROOT / "database" / "personal_assistant.db"
     
 class Application:
