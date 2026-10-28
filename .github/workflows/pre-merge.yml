@@ -28,7 +28,7 @@ jobs:
 
       - name: Set up Python
         working-directory: .
-        run: uv install
+        run: uv python install
 
       - name: Install dependencies
         working-directory: .
