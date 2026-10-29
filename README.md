@@ -1,4 +1,9 @@
 # Personal Assistant
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![GitHub License](https://img.shields.io/github/license/VijayVignesh1/personal_assistant?style=for-the-badge)
+![GitHub Stars](https://img.shields.io/github/stars/VijayVignesh1/personal_assistant?style=for-the-badge)
+![GitHub Issues](https://img.shields.io/github/issues/VijayVignesh1/personal_assistant?style=for-the-badge)
+![Pull Requests](https://img.shields.io/github/issues-pr/VijayVignesh1/personal_assistant?style=for-the-badge)
 A privacy-focused personal AI assistant with long-term memory, semantic retrieval, and local-first data storage, designed to evolve into a private multimodal assistant.
 
 ## Python Installation
