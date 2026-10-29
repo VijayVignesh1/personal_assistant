@@ -2,13 +2,13 @@
 <img src="https://raw.githubusercontent.com/VijayVignesh1/personal_assistant/master/docs/assets/personal_assistant_logo.jpg" width="50%" alt='personal_assistant'>
 </p>
 
-![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.13-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.13-3776AB?style=plastic&logo=python&logoColor=white)
 [![codecov](https://codecov.io/github/VijayVignesh1/personal_assistant/graph/badge.svg?token=0O7YQFLO46)](https://codecov.io/github/VijayVignesh1/personal_assistant)
 [![Pre-merge checks](https://github.com/VijayVignesh1/personal_assistant/actions/workflows/pre-merge.yml/badge.svg)](https://github.com/VijayVignesh1/personal_assistant/actions/workflows/pre-merge.yml)
-![GitHub Stars](https://img.shields.io/github/stars/VijayVignesh1/personal_assistant?style=for-the-badge)
-![GitHub Issues](https://img.shields.io/github/issues/VijayVignesh1/personal_assistant?style=for-the-badge)
-![Pull Requests](https://img.shields.io/github/issues-pr/VijayVignesh1/personal_assistant?style=for-the-badge)
-![GitHub License](https://img.shields.io/github/license/VijayVignesh1/personal_assistant?style=for-the-badge)
+![GitHub Stars](https://img.shields.io/github/stars/VijayVignesh1/personal_assistant?style=plastic)
+![GitHub Issues](https://img.shields.io/github/issues/VijayVignesh1/personal_assistant?style=plastic)
+![Pull Requests](https://img.shields.io/github/issues-pr/VijayVignesh1/personal_assistant?style=plastic)
+![GitHub License](https://img.shields.io/github/license/VijayVignesh1/personal_assistant?style=plastic)
 
 A privacy-focused personal AI assistant with long-term memory, semantic retrieval, and local-first data storage, designed to evolve into a private multimodal assistant.
 
