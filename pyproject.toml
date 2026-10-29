@@ -27,6 +27,7 @@ dev = [
     "pytest",
     "ruff",
     "mypy",
+    "pytest-cov>=7.1.0",
 ]
 
 [build-system]
