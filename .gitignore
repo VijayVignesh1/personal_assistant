@@ -28,3 +28,8 @@ __pycache__/
 
 # chainlit
 *.chainlit/
+
+# codecov
+coverage.xml
+.coverage
+htmlcov/
