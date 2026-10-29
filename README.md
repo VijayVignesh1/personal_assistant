@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://raw.githubusercontent.com/VijayVignesh1/personal_assistant/master/docs/assets/personal_assistant_logo.jpg" width="50%" alt='personal_assistant'>
+  <img src="docs/assets/personal_assistant_logo.jpg" width="50%" alt="Personal Assistant">
 </p>
 
 ![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.13-3776AB?style=plastic&logo=python&logoColor=white)
@@ -24,7 +24,7 @@ A privacy-focused personal AI assistant with long-term memory, semantic retrieva
 ## Demo
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/VijayVignesh1/personal_assistant/master/docs/assets/personal_assistant_demo.gif" alt="Personal Assistant Demo" width="800">
+  <img src="docs/assets/personal_assistant_demo.gif" alt="Personal Assistant Demo" width="800">
 </p>
 
 ## Features
