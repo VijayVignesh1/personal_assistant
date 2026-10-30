@@ -5,6 +5,7 @@ from pathlib import Path
 from personal_assistant.objects.episode import Episode
 from personal_assistant.objects.memory import Memory
 from personal_assistant.objects.message import Message
+from personal_assistant.objects.retrieved_context import RetrievedContext
 
 
 class Database:
@@ -61,6 +62,16 @@ class Database:
                 embedding BLOB,
                 model_name TEXT,
                 episode_id TEXT NOT NULL REFERENCES episode (episode_id)
+            )''')
+
+            db.execute('''CREATE TABLE IF NOT EXISTS retrieved_context (
+                id TEXT PRIMARY KEY,
+                message_id TEXT NOT NULL REFERENCES message(message_id),
+                memory_id TEXT REFERENCES memory(memory_id),
+                retrieved_content TEXT NOT NULL,
+                similarity_score REAL,
+                retrieval_rank INTEGER,
+                retrieval_timestamp TEXT NOT NULL
             )''')
 
             db.commit()
@@ -239,5 +250,45 @@ class Database:
             rows = cursor.fetchall()
             memories = [Memory(content=row[0], timestamp=row[1], importance=row[2], episode_id=row[3], memory_id=row[4], embedding=row[5], model_name=row[6]) for row in rows]
             return memories
+        finally:
+            self._close()
+
+    def save_retrieved_context(self, retrieved_contexts: list[RetrievedContext]) -> None:
+        """
+        Save a list of RetrievedContext instances to the database.
+        :param retrieved_contexts: A list of RetrievedContext instances to save.
+        """
+        if not self.connection:
+            self._connect()
+        db = self.connection
+        assert db is not None, "Database connection is not established."
+        try:
+            for context in retrieved_contexts:
+                db.execute('''
+                    INSERT INTO retrieved_context (id, message_id, memory_id, retrieved_content, similarity_score, retrieval_rank, retrieval_timestamp)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (context.id, context.message_id, context.memory_id, context.retrieved_content, context.similarity_score, context.retrieval_rank, context.retrieval_timestamp))
+            db.commit()
+        except Exception:
+            db.rollback()
+            raise
+        finally:
+            self._close()
+
+    def get_all_retrieved_contexts(self, message_id) -> list[RetrievedContext]:
+        """
+        Retrieve all retrieved contexts for a specific message ID from the database.
+        :param message_id: The ID of the message to retrieve contexts for.
+        :return: A list of RetrievedContext instances.
+        """
+        if not self.connection:
+            self._connect()
+        db = self.connection
+        assert db is not None, "Database connection is not established."
+        try:
+            cursor = db.execute('SELECT id, message_id, memory_id, retrieved_content, similarity_score, retrieval_rank, retrieval_timestamp FROM retrieved_context WHERE message_id = ?', (message_id,))
+            rows = cursor.fetchall()
+            contexts = [RetrievedContext(id=row[0], message_id=row[1], memory_id=row[2], retrieved_content=row[3], similarity_score=row[4], retrieval_rank=row[5], retrieval_timestamp=row[6]) for row in rows]
+            return contexts
         finally:
             self._close()

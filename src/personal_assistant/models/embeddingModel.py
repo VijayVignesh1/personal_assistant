@@ -28,7 +28,7 @@ class embeddingModel(BaseEmbeddingModel):
             warnings.warn("Running on CPU, performance may be slower.")
         self.model_name = model_name
 
-        self.model = SentenceTransformer(model_name, device=self.device)
+        self.model = SentenceTransformer(model_name, device=self.device, local_files_only=True)
 
         # name of the prompt used for queries, or None if queries are encoded like documents.
         # sentence-transformers fills in an empty "query" prompt for models whose config

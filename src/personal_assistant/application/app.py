@@ -9,6 +9,7 @@ from personal_assistant.models.causalLM import causalLM
 from personal_assistant.models.embeddingModel import embeddingModel
 from personal_assistant.objects.episode import Episode
 from personal_assistant.objects.message import Message
+from personal_assistant.objects.retrieved_context import RetrievedContext
 from personal_assistant.response.response_generator import ResponseGenerator
 from personal_assistant.retriever.retrieval import RetrievalMethod, Retriever
 
@@ -59,6 +60,18 @@ class Application:
                               embedding_model=self.embedding_model,
                               method=self.retrieval_method)
         relevant_memories = await retriever.retrieve_relevant_memories(query=query, top_n=5)
+        # save retrieved contexts to the database
+        retrieved_contexts = [
+            RetrievedContext(
+                id=str(uuid.uuid4()),
+                message_id=message_id,
+                memory_id=memory.memory_id,
+                retrieved_content=memory.content,
+                retrieval_timestamp=str(datetime.datetime.now(tz=datetime.UTC))
+            )
+            for memory in relevant_memories
+        ]
+        self.db.save_retrieved_context(retrieved_contexts)
         for memory in relevant_memories:
             context.append({'role': 'system', 'content': memory.content})
 
@@ -87,3 +100,11 @@ class Application:
         print(f"Saved memories for episode {[memory.content for memory in memories]}")
         self.ended_at = str(datetime.datetime.now(tz=datetime.UTC))
         self.db.close_episode(self.episode_id)
+        contexts = []
+        for msg in all_messages:
+            message_ctx = []
+            retrieved_contexts = self.db.get_all_retrieved_contexts(message_id=msg.message_id)
+            for context in retrieved_contexts:
+                message_ctx.append(context.retrieved_content)
+            contexts.append(message_ctx)
+        print(contexts)
