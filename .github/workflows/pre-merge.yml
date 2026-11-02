@@ -40,6 +40,13 @@ jobs:
       - name: Mypy
         run: uv run mypy src
 
+      - name: Download embedding model
+        run: |
+          python -c "
+          from sentence_transformers import SentenceTransformer
+          SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+          "
+          
       - name: Pytest
         run: uv run pytest --cov --cov-branch --cov-report=xml -m "not gpu and not ollama"
 
