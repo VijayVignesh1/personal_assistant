@@ -276,7 +276,7 @@ class Database:
         finally:
             self._close()
 
-    def get_all_retrieved_contexts(self, message_id) -> list[RetrievedContext]:
+    def get_all_retrieved_contexts(self, message_id: str) -> list[RetrievedContext]:
         """
         Retrieve all retrieved contexts for a specific message ID from the database.
         :param message_id: The ID of the message to retrieve contexts for.
