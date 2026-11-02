@@ -9,6 +9,7 @@ from personal_assistant.db.db import Database
 from personal_assistant.objects.episode import Episode
 from personal_assistant.objects.memory import Memory
 from personal_assistant.objects.message import Message
+from personal_assistant.objects.retrieved_context import RetrievedContext
 
 
 @pytest.fixture
@@ -148,3 +149,40 @@ def test_get_all_memories(db):
     memories = db.get_all_memories()
     assert any(mem.memory_id == "test_memory" for mem in memories)
     print("PASS: get_all_memories")
+
+def test_add_and_get_retrieved_contexts(db):
+    episode_id = db.create_episode(Episode(episode_id=str(uuid.uuid4()), started_at=datetime.datetime.now(tz=datetime.UTC).isoformat()))
+    message_id = str(uuid.uuid4())
+    temp_message_user = Message(
+        message_id=message_id,
+        episode_id=episode_id,
+        timestamp=datetime.datetime.now(tz=datetime.UTC).isoformat(),
+        role="user",
+        content="Hello, how are you?"
+    )
+    db.add_message(temp_message_user)
+    memory_id = str(uuid.uuid4())
+    memory = Memory(
+        memory_id=memory_id,
+        content="This is a test memory.",
+        timestamp=datetime.datetime.now(tz=datetime.UTC).isoformat(),
+        importance=0.9,
+        episode_id=episode_id,
+        embedding=np.array([0.1, 0.2, 0.3], dtype=np.float32).tobytes(),
+        model_name="text-embedding-3-small"
+    )
+    db.save_memory([memory])
+    context = [RetrievedContext(
+        id=str(uuid.uuid4()),
+        message_id=message_id,
+        memory_id=memory_id,
+        retrieved_content="This is a test retrieved context.",
+        retrieval_timestamp=datetime.datetime.now(tz=datetime.UTC).isoformat(),
+        episode_id=episode_id
+    )]
+    db.save_retrieved_context(context)
+    retrieved_contexts = db.get_all_retrieved_contexts(message_id)
+    assert any(ctx.message_id == message_id for ctx in retrieved_contexts)
+    assert any(ctx.memory_id == memory_id for ctx in retrieved_contexts)
+    assert any(ctx.retrieved_content == "This is a test retrieved context." for ctx in retrieved_contexts)
+    print("PASS: get_retrieved_contexts")
