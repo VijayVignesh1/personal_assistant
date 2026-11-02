@@ -67,6 +67,7 @@ class Database:
             db.execute('''CREATE TABLE IF NOT EXISTS retrieved_context (
                 id TEXT PRIMARY KEY,
                 message_id TEXT NOT NULL REFERENCES message(message_id),
+                episode_id TEXT NOT NULL REFERENCES episode (episode_id),
                 memory_id TEXT REFERENCES memory(memory_id),
                 retrieved_content TEXT NOT NULL,
                 similarity_score REAL,
@@ -265,9 +266,9 @@ class Database:
         try:
             for context in retrieved_contexts:
                 db.execute('''
-                    INSERT INTO retrieved_context (id, message_id, memory_id, retrieved_content, similarity_score, retrieval_rank, retrieval_timestamp)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (context.id, context.message_id, context.memory_id, context.retrieved_content, context.similarity_score, context.retrieval_rank, context.retrieval_timestamp))
+                    INSERT INTO retrieved_context (id, message_id, memory_id, episode_id, retrieved_content, similarity_score, retrieval_rank, retrieval_timestamp)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (context.id, context.message_id, context.memory_id, context.episode_id, context.retrieved_content, context.similarity_score, context.retrieval_rank, context.retrieval_timestamp))
             db.commit()
         except Exception:
             db.rollback()
@@ -286,9 +287,9 @@ class Database:
         db = self.connection
         assert db is not None, "Database connection is not established."
         try:
-            cursor = db.execute('SELECT id, message_id, memory_id, retrieved_content, similarity_score, retrieval_rank, retrieval_timestamp FROM retrieved_context WHERE message_id = ?', (message_id,))
+            cursor = db.execute('SELECT id, message_id, memory_id, episode_id, retrieved_content, similarity_score, retrieval_rank, retrieval_timestamp FROM retrieved_context WHERE message_id = ?', (message_id,))
             rows = cursor.fetchall()
-            contexts = [RetrievedContext(id=row[0], message_id=row[1], memory_id=row[2], retrieved_content=row[3], similarity_score=row[4], retrieval_rank=row[5], retrieval_timestamp=row[6]) for row in rows]
+            contexts = [RetrievedContext(id=row[0], message_id=row[1], memory_id=row[2], episode_id=row[3], retrieved_content=row[4], similarity_score=row[5], retrieval_rank=row[6], retrieval_timestamp=row[7]) for row in rows]
             return contexts
         finally:
             self._close()

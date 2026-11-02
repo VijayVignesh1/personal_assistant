@@ -64,6 +64,7 @@ class Application:
         retrieved_contexts = [
             RetrievedContext(
                 id=str(uuid.uuid4()),
+                episode_id=self.episode_id,
                 message_id=message_id,
                 memory_id=memory.memory_id,
                 retrieved_content=memory.content,
@@ -100,11 +101,3 @@ class Application:
         print(f"Saved memories for episode {[memory.content for memory in memories]}")
         self.ended_at = str(datetime.datetime.now(tz=datetime.UTC))
         self.db.close_episode(self.episode_id)
-        contexts = []
-        for msg in all_messages:
-            message_ctx = []
-            retrieved_contexts = self.db.get_all_retrieved_contexts(message_id=msg.message_id)
-            for context in retrieved_contexts:
-                message_ctx.append(context.retrieved_content)
-            contexts.append(message_ctx)
-        print(contexts)
