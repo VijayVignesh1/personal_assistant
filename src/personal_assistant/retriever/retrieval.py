@@ -113,7 +113,7 @@ class Retriever:
         elif self.method == "hybrid":
             ranked_memories = await self._hybrid_ranking(query)
         else:
-            ranked_memories = self._bm25_ranking(query)
+            ranked_memories = self._bm25_ranking(query, positive_only=True)
 
         results = [self.memories[i] for i in ranked_memories[:top_n]]
 
