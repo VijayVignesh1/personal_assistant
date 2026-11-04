@@ -80,3 +80,17 @@ async def test_create_memories_with_wrong_response(memory_builder):
         patch.object(memory_builder, "embedding_model", new=MockEmbedding()), \
         pytest.raises(ValueError):
         _ = await memory_builder.create_memories(messages, episode_id="test_episode")
+
+
+@pytest.mark.asyncio
+async def test_deduplicate_memories(memory_builder):
+    """Test deduplication of memories based on their content."""
+    memories = [
+        Memory(content="Alice went to the park with Bob.", timestamp=str(datetime.datetime.now(tz=datetime.UTC)), importance=0.9, episode_id="test_episode", memory_id=str(uuid.uuid4()), embedding=b"", model_name="text-embedding-3-small"),
+        Memory(content="Alice went to the park with Bob.", timestamp=str(datetime.datetime.now(tz=datetime.UTC)), importance=0.9, episode_id="test_episode", memory_id=str(uuid.uuid4()), embedding=b"", model_name="text-embedding-3-small"),
+        Memory(content="Bob and Charlie decided to have a picnic.", timestamp=str(datetime.datetime.now(tz=datetime.UTC)), importance=0.7, episode_id="test_episode", memory_id=str(uuid.uuid4()), embedding=b"", model_name="text-embedding-3-small"),
+    ]
+    deduplicated_memories = memory_builder.deduplicate_memories(memories)
+    assert len(deduplicated_memories) == 2
+    assert all(isinstance(mem, Memory) for mem in deduplicated_memories)
+    assert all(mem.content in ["Alice went to the park with Bob.", "Bob and Charlie decided to have a picnic."] for mem in deduplicated_memories)

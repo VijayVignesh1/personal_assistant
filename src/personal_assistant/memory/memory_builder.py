@@ -73,6 +73,16 @@ class MemoryBuilder:
                 }
             ]
         """
+
+    def deduplicate_memories(self, memories: list[Memory]) -> list[Memory]:
+        """Deduplicate the given list of memories based on their content."""
+        seen_contents = set()
+        deduplicated = []
+        for mem in memories:
+            if mem.content not in seen_contents:
+                seen_contents.add(mem.content)
+                deduplicated.append(mem)
+        return deduplicated
     
     async def create_memories(self, messages: list[Message], episode_id: str) -> list[Memory]:
         """Create memories for the given episode ID."""
@@ -96,6 +106,9 @@ class MemoryBuilder:
                                             embedding=await self.embedding_model(mem["content"]),
                                             model_name=self.embedding_model.model_name) for mem in prospect_memories if float(mem["importance"]) > 0.5]
                 self.memories.extend(filtered_memories)
+
+            # step 4: deduplicate the filtered memories
+            self.memories = self.deduplicate_memories(self.memories)
         except json.JSONDecodeError as e:
             raise ValueError(f"Error generating memories: {e}")
 
