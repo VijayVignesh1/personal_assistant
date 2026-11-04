@@ -2,6 +2,8 @@ import datetime
 import json
 import uuid
 
+from tqdm import tqdm  # type: ignore[import-untyped]
+
 from personal_assistant.models.base import BaseEmbeddingModel, BaseLLM
 from personal_assistant.objects.memory import Memory
 from personal_assistant.objects.message import Message
@@ -14,7 +16,7 @@ class MemoryBuilder:
         self.memories: list[Memory] = []
         self.llm_model = llm_model
         self.embedding_model = embedding_model
-        self.token_size = 512
+        self.token_size = 8192
 
     def _chunk_input(self, combined_message: str) -> list[str]:
         """Chunk the input message into smaller parts based on the specified token size.
@@ -79,7 +81,7 @@ class MemoryBuilder:
         # step 2: generate memories from the chunked inputs
         system_context = self._generate_memory_prompt() 
         try:
-            for chunk in message_chunks:
+            for chunk in tqdm(message_chunks, desc="Processing message chunks"):
                 input_context = [{'role': 'system', 'content': system_context}, {'role': 'user', 'content': chunk}]
                 memory_response = ""
                 async for token in self.llm_model(input_context):
