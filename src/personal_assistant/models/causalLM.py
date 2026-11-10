@@ -180,7 +180,6 @@ async def concurrent_benchmark(
     total_tokens = sum(r["tokens"] for r in results)
 
     benchmarks = {
-        "concurrency": concurrency,
         "total_requests": total_requests,
         "total_tokens": total_tokens,
         "total_time": elapsed,
@@ -240,10 +239,10 @@ async def main() -> None:
 
     # print the results as a table
     table = []
-    for concurrency_level, result in results.items():
+    for result in results.values():
         for model_name, model_result in result.items():
             
-            row = [f"{model_name} (c={concurrency_level})"] + [model_result[k] for k in model_result]
+            row = [f"{model_name}"] + [model_result[k] for k in model_result]
             table.append(row)
 
     headers = ["Model"] + list(next(iter(results.values()))["huggingface"].keys())
