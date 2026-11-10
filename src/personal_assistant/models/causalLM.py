@@ -1,4 +1,5 @@
 import asyncio
+import time
 import warnings
 from collections.abc import AsyncGenerator
 from threading import Thread
@@ -7,9 +8,11 @@ from typing import Any
 import ollama
 import torch
 from ollama import AsyncClient, ResponseError
+from tabulate import tabulate
 from transformers import AsyncTextIteratorStreamer, AutoModelForCausalLM, AutoTokenizer
 
 from personal_assistant.models.base import BaseLLM
+from personal_assistant.models.system_monitor import SystemMonitor
 
 
 class causalLM(BaseLLM):
@@ -108,4 +111,144 @@ class causalLM(BaseLLM):
 
         async for chunk in response:
             yield chunk.message.content  # type: ignore[misc]
-        
+
+
+async def consume(model: causalLM, query: list[dict[str, str]], **kwargs: Any) -> dict[str, float]:
+    start_time = time.perf_counter()
+
+    first_token_time = None
+    token_count = 0
+
+    async for _ in model(query, **kwargs):
+        token_count += 1
+
+        if first_token_time is None:
+            first_token_time = time.perf_counter()
+
+    end_time = time.perf_counter()
+
+    if first_token_time is None:
+        return {"ttft": 0.0, "e2e": 0.0, "tokens": 0, "itl": 0.0}
+
+    ttft = first_token_time - start_time
+    e2e = end_time - start_time
+
+    itl = (
+        (e2e - ttft) / (token_count - 1)
+        if token_count > 1 else 0.0
+    )
+
+    return {
+        "ttft": ttft,
+        "e2e": e2e,
+        "tokens": token_count,
+        "itl": itl
+    }
+
+
+async def concurrent_benchmark(
+    model: causalLM,
+    query: list[dict[str, str]],
+    concurrency: int = 5,
+    **kwargs: Any
+) -> dict[str, float]:
+
+
+    monitor = SystemMonitor(
+        gpu_id=0,
+        interval=0.1
+    )
+
+    monitor.start()
+
+    start_time = time.perf_counter()
+
+    try:
+        results = await asyncio.gather(*[
+            consume(model, query, **kwargs)
+            for _ in range(concurrency)
+        ])
+    finally:
+        end_time = time.perf_counter()
+        system_metrics = await monitor.stop()
+
+    elapsed = end_time - start_time
+
+    results = [r for r in results if r is not None]
+
+    total_requests = len(results)
+    total_tokens = sum(r["tokens"] for r in results)
+
+    benchmarks = {
+        "total_requests": total_requests,
+        "total_tokens": total_tokens,
+        "total_time (s)": elapsed,
+
+        "requests_per_sec": total_requests / elapsed,
+        "tokens_per_sec": total_tokens / elapsed,
+
+        "avg_ttft (s)": sum(r["ttft"] for r in results) / total_requests,
+        "avg_e2e (s)": sum(r["e2e"] for r in results) / total_requests,
+        "avg_itl (s)": sum(r["itl"] for r in results) / total_requests,
+    } | system_metrics
+
+    return benchmarks
+
+async def main() -> None:
+
+    huggingface_model = causalLM(
+        model_name="deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+    )
+
+    ollama_model = causalLM(
+        model_name="deepseek-r1:1.5b"
+    )
+
+    query = [
+        {
+            "role": "user",
+            "content": "Explain LLM. Answer in exactly 10 words."
+        }
+    ]
+    results = {}
+    
+    for req in range(5, 25, 5):
+
+        hf_result = await concurrent_benchmark(
+            huggingface_model,
+            query,
+            concurrency=req,
+            max_new_tokens=8
+        )
+
+        ollama_result = await concurrent_benchmark(
+            ollama_model,
+            query,
+            concurrency=req,
+            options={
+                "num_predict": 10,
+                "temperature": 0
+            }
+        )
+
+        results[req] = {
+            "huggingface": hf_result,
+            "ollama": ollama_result
+        }
+       
+
+    # print the results as a table
+    table = []
+    for result in results.values():
+        for model_name, model_result in result.items():
+            
+            row = [f"{model_name}"] + [model_result[k] for k in model_result]
+            table.append(row)
+
+    headers = ["Model"] + list(next(iter(results.values()))["huggingface"].keys())
+    
+    print(tabulate(table, headers=headers, tablefmt="github"))
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
