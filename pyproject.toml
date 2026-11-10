@@ -19,6 +19,7 @@ dependencies = [
     "ollama>=0.6.3",
     "chainlit>=2.12.0",
     "mlflow>=3.17.2",
+    "nvidia-ml-py>=13.615.71",
 ]
 
 [dependency-groups]
@@ -27,6 +28,8 @@ dev = [
     "ruff",
     "mypy",
     "pytest-cov>=7.1.0",
+    "types-tabulate>=0.10.0.20261006",
+    "types-psutil>=7.2.2.20260906",
 ]
 
 [build-system]
