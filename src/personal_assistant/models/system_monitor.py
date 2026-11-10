@@ -53,12 +53,12 @@ class SystemMonitor:
             ram_percent = psutil.virtual_memory().percent
 
             self.samples.append({
-                "gpu_util": gpu_util.gpu,
-                "gpu_memory_util": gpu_util.memory,
-                "gpu_memory_used": memory.used / (1024 ** 2),
-                "gpu_memory_total": memory.total / (1024 ** 2),
-                "cpu_percent": cpu_percent,
-                "ram_percent": ram_percent
+                "gpu_util (%)": gpu_util.gpu,
+                "gpu_memory_util (%)": gpu_util.memory,
+                "gpu_memory_used (MB)": memory.used / (1024 ** 2),
+                "gpu_memory_total (MB)": memory.total / (1024 ** 2),
+                "cpu_util (%)": cpu_percent,
+                "ram_util (%)": ram_percent
             })
 
             await asyncio.sleep(self.interval)
@@ -82,17 +82,17 @@ class SystemMonitor:
             return max(s[key] for s in self.samples)
 
         return {
-            "avg_gpu_util": avg("gpu_util"),
-            "max_gpu_util": maximum("gpu_util"),
+            "avg_gpu_util (%)": avg("gpu_util (%)"),
+            "max_gpu_util (%)": maximum("gpu_util (%)"),
 
-            "avg_gpu_memory_mb": avg("gpu_memory_used"),
-            "max_gpu_memory_mb": maximum("gpu_memory_used"),
+            "avg_gpu_memory_used (MB)": avg("gpu_memory_used (MB)"),
+            "max_gpu_memory_used (MB)": maximum("gpu_memory_used (MB)"),
 
-            "avg_gpu_memory_util": avg("gpu_memory_util"),
+            "avg_gpu_memory_util (%)": avg("gpu_memory_util (%)"),
 
-            "avg_cpu_util": avg("cpu_percent"),
-            "max_cpu_util": maximum("cpu_percent"),
+            "avg_cpu_util (%)": avg("cpu_util (%)"),
+            "max_cpu_util (%)": maximum("cpu_util (%)"),
 
-            "avg_ram_util": avg("ram_percent"),
-            "max_ram_util": maximum("ram_percent")
+            "avg_ram_util (%)": avg("ram_util (%)"),
+            "max_ram_util (%)": maximum("ram_util (%)")
         }

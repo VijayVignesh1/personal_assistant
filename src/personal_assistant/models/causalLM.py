@@ -182,14 +182,14 @@ async def concurrent_benchmark(
     benchmarks = {
         "total_requests": total_requests,
         "total_tokens": total_tokens,
-        "total_time": elapsed,
+        "total_time (s)": elapsed,
 
         "requests_per_sec": total_requests / elapsed,
         "tokens_per_sec": total_tokens / elapsed,
 
-        "avg_ttft": sum(r["ttft"] for r in results) / total_requests,
-        "avg_e2e": sum(r["e2e"] for r in results) / total_requests,
-        "avg_itl": sum(r["itl"] for r in results) / total_requests,
+        "avg_ttft (s)": sum(r["ttft"] for r in results) / total_requests,
+        "avg_e2e (s)": sum(r["e2e"] for r in results) / total_requests,
+        "avg_itl (s)": sum(r["itl"] for r in results) / total_requests,
     } | system_metrics
 
     return benchmarks
