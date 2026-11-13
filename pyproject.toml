@@ -8,21 +8,34 @@ dependencies = [
     "numpy>=2.4.6",
     "pydantic>=2.0",
     "python-dotenv>=1.0",
-    "gradio>=6.2",
-    "torch>=2.6.0",
     "transformers>=4.56.1",
     "deepeval>=4.2.8",
     "accelerate>=1.15.0",
-    "bitsandbytes>=0.50.2",
     "sentence-transformers>=6.1.0",
     "rank-bm25>=0.2.2",
     "ollama>=0.6.3",
     "chainlit>=2.12.0",
     "mlflow>=3.17.2",
-    "nvidia-ml-py>=13.615.71",
     "bs4>=0.0.2",
     "trafilatura>=2.3.1",
     "tiktoken>=0.14.0",
+    "py-cpuinfo>=9.0.0",
+]
+
+[project.optional-dependencies]
+
+cpu = [
+    "torch>=2.6.0"
+]
+
+nvidia = [
+    "torch>=2.6.0",
+    "bitsandbytes>=0.50.2",
+    "nvidia-ml-py>=13.0"
+]
+
+apple = [
+    "torch>=2.6.0"
 ]
 
 [dependency-groups]
