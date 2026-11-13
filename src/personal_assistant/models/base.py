@@ -10,7 +10,7 @@ class BaseLLM(ABC):
         self.model_name = model_name
 
     @abstractmethod
-    def __call__(self, query: list[dict[str, str]], *args: Any, **kwargs: Any) -> AsyncGenerator[str, None]:
+    def __call__(self, query: list[dict[str, str]], *args: Any, **kwargs: Any) -> AsyncGenerator[Any, None]:
         """Generate a response based on the given messages.
 
         Args:

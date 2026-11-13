@@ -40,7 +40,7 @@ async def test_contains(data, model):
     async for resp in model.generate_response(
         query
     ):
-        actual_output += resp
+        actual_output += resp.message.content
 
     turns = [Turn(role=turn["role"], content=turn["content"]) for turn in query] + [Turn(role="assistant", content=actual_output)]
 

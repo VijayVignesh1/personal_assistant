@@ -48,7 +48,7 @@ jobs:
           "
           
       - name: Pytest
-        run: uv run pytest --cov --cov-branch --cov-report=xml -m "not gpu and not ollama"
+        run: uv run pytest --cov --cov-branch --cov-report=xml -m "not gpu and not ollama and not web"
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5
