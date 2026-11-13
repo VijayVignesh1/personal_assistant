@@ -55,6 +55,7 @@ testpaths = ["tests"]
 markers = [
     "gpu: tests that require a GPU",
     "ollama: tests that require ollama connection",
+    "web: tests that require access to web"
 ]
 
 [tool.ruff]
