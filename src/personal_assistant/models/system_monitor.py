@@ -1,7 +1,11 @@
 import asyncio
 
 import psutil
-import pynvml  # type: ignore[import-untyped]
+
+try:
+    import pynvml
+except ImportError:
+    pynvml = None
 
 
 class SystemMonitor:
@@ -21,6 +25,9 @@ class SystemMonitor:
         self.task: asyncio.Task[None] | None = None
 
     def start(self) -> None:
+        if pynvml is None:
+            raise ImportError("pynvml is required for GPU monitoring but is not installed.")
+        
         pynvml.nvmlInit()
 
         self.handle = pynvml.nvmlDeviceGetHandleByIndex(
