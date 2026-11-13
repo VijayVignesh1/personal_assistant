@@ -36,6 +36,27 @@ def _get_nvidia_smi() -> list[dict[str, Any]]:
     return []
 
 
+def _get_cuda_version() -> str | None:
+    """Returns CUDA version supported by the installed NVIDIA driver."""
+    if not shutil.which("nvidia-smi"):
+        return None
+
+    try:
+        out = subprocess.check_output(
+            ["nvidia-smi"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        )
+
+        for line in out.splitlines():
+            if "CUDA Version:" in line:
+                return line.split("CUDA Version:")[1].strip().split()[0]
+
+    except subprocess.CalledProcessError:
+        pass
+
+    return None
+
 def _get_linux_gpus() -> tuple[GPUInfo,...]:
   gpus: tuple[GPUInfo,...] = ()
   nv_gpus = _get_nvidia_smi()
@@ -84,6 +105,7 @@ def _get_linux_gpus() -> tuple[GPUInfo,...]:
       avail_gb = nv["avail_gb"]
       driver = nv["driver"]
       is_cuda = True
+      cuda_version = _get_cuda_version()
       nv_idx += 1
 
     # 2. AMD (and newer Intel Xe) via sysfs VRAM counters
@@ -110,7 +132,7 @@ def _get_linux_gpus() -> tuple[GPUInfo,...]:
         else:
           driver = drv_name
 
-    gpus += (GPUInfo(name, GPUVendor[vendor.upper()] if vendor.upper() in GPUVendor.__members__ else GPUVendor.UNKNOWN, total_gb, avail_gb, driver, is_cuda),)
+    gpus += (GPUInfo(name, GPUVendor[vendor.upper()] if vendor.upper() in GPUVendor.__members__ else GPUVendor.UNKNOWN, total_gb, avail_gb, driver, is_cuda, cuda_version if is_cuda else None),)
 
   return gpus
 

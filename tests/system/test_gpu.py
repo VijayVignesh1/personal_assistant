@@ -16,6 +16,8 @@ def test_detect_gpus():
         assert hasattr(gpu, "driver_version")
         assert isinstance(gpu.driver_version, str)
         assert isinstance(gpu.is_cuda, bool)
+        assert hasattr(gpu, "cuda_version")
+        assert isinstance(gpu.cuda_version, str) or gpu.cuda_version is None
 
     assert gpus is not None
     assert isinstance(gpus, tuple)

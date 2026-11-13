@@ -39,6 +39,7 @@ class GPUInfo:
     memory_available_gb: float | None = None
     driver_version: str | None = None
     is_cuda: bool | None = False
+    cuda_version: str | None = None
 
 
 @dataclass
