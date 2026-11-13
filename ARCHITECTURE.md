@@ -8,9 +8,11 @@ This section provides a high-level overview of the project's directory and file 
 [Project Root]/
 ├── personal_assistant
     ├── src/                # Main source code for the python implementation
+        ├── application/    # Application class having the entire backend logic
         ├── db/             # Database models and handling
         ├── memory/         # Memory creation logic
-        ├── embedding/      # Embedding creation logic
+        ├── models/         # Causal and Embedding model classes
+        ├── tools/          # Tool calling logic for db search, web search etc.
         ├── retriever/      # Relavant document retrieval logic
         └── response/       # Response generation logic
         └── objects/        # Contains all dataclass objects
@@ -31,11 +33,13 @@ This section provides a high-level overview of the project's directory and file 
 ```
 [User] <--> [Frontend] <--> [Application] <--> [Database]
                                         |
-                                        + <--> [Memory]
-                                        |
-                                        + <--> [Retrieval]  <---> [Database]                          
+                                        + <--> [LLM Tool Call] <--->  [Retrieval]  <---> [Database]  
+                                        |   
+                                        + <--> [LLM Tool Call] <--->  [Web Search]  <---> [Searcxng]                     
                                         |
                                         + <--> [Response]   <---> [LLM Model]   
+                                        |
+                                        + <--> [Memory]  <---> [Database] 
 
                     
 
@@ -52,34 +56,43 @@ This section provides a high-level overview of the project's directory and file 
 Description: The main user interface for interacting with the system, allowing users to chat with the personal assistant.
 
 
-### 3.2. Database
+### 3.2 Application
+Description: This class contains the main backend logic connecting all the components together. Every user messages is sent through this pipeline to get the output response. 
+
+
+### 3.3. Database
 
 Description: Handles persistent data storage and retrieval. It is the only component that directly interacts with the underlying SQLite database and vector-search implementation. It provides interfaces for managing episodes, messages, memories, embeddings, and vector-search operations.
 
 
-### 3.3. Memory
+### 3.4. Memory
 
 Description: Handles extraction and creation of long-term memories from conversation episodes, including memory selection and preparation for persistence.
 
 
-### 3.4. Retrieval
+### 3.5. Retrieval
 
 Description: Handles retrieval of relevant memories and conversation context, including query preparation, candidate selection, reranking, filtering, deduplication, and final context selection.
 
 
-### 3.5. Reponse
+### 3.6. Reponse
 
 Description: Generates an assistant response using the current conversation, retrieved context, system instructions, and the provided language model.
 
 Input format: List[dict[str, str]] - [{'role': <user/system/assistant>, 'content': <message>}]
 Output format: str
 
-### 3.6. LLM Model
+### 3.7. LLM Model
 
 Description: LLM class for different models that follows the strcuture of a base class to make sure multiple models can be plugged in and out while each can be handle input and output differently. The input format given to the class is always the same. Each model class is reponsible for converting it to the format it needs.
 
 Input format: List[dict[str, str]] - [{'role': <user/system/assistant>, 'content': <message>}]
 Output format: str
+
+
+### 3.8. Tools
+Description: Contains all the tools available for LLM to call the external services like personal db, web search etc.
+
 
 ## 4. Data Stores
 
@@ -111,4 +124,4 @@ Repository URL: [Personal Assistant Repo](https://github.com/VijayVignesh1/perso
 
 Primary Contact/Team: Vijay Vignesh Prasad Rao
 
-Date of Last Update: 2026-09-28
+Date of Last Update: 2026-11-12

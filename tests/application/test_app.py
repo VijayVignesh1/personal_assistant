@@ -43,3 +43,15 @@ def test_generate_response_using_last_n_messages(app):
     second_query = "What is the secret code I gave you?"
     response = app.generate_response(second_query)
     assert isinstance(response, AsyncGenerator)
+
+def test_generate_response_web_search(app):
+    """Test generating a response that triggers a web search tool call."""
+    query = "Search for the latest news on AI"
+    response = app.generate_response(query)
+    assert isinstance(response, AsyncGenerator)
+
+def test_generate_response_db_search(app):
+    """Test generating a response that triggers a database search tool call."""
+    query = "Search for messages containing the secret code"
+    response = app.generate_response(query)
+    assert isinstance(response, AsyncGenerator)

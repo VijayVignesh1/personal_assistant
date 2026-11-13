@@ -1,19 +1,22 @@
+import datetime
 from collections.abc import AsyncGenerator
+from typing import Any
 
 from personal_assistant.models.base import BaseLLM
 
 
 class ResponseGenerator:
     def __init__(self, 
-                 model: BaseLLM) -> None:
+                 model: BaseLLM,
+                 ) -> None:
         """Initialize the ResponseGenerator class."""
         self.model = model
-        self.prompt = self._generate_prompt()
+        self.prompt = self._generate_prompt(current_date=datetime.datetime.now().strftime("%B %d, %Y"))
 
-    def _generate_prompt(self) -> str:
+    def _generate_prompt(self, current_date: str = "October 13, 2026") -> str:
         """Generate the prompt for the model."""
-        return """
-            You are diaryai, a personal assistant built by Vijay Vignesh. Current date: October 13, 2026.
+        return f"""
+            You are diaryai, a personal assistant built by Vijay Vignesh. Current date: {current_date}.
 
             Your role is to help the user think, learn, plan, reflect, and solve problems through natural conversation. Use the conversation 
             and the retrieved memories below to answer the user's questions.
@@ -29,9 +32,12 @@ class ResponseGenerator:
             You engage in authentic conversation by responding to the information provided, asking relevant questions, and showing genuine curiosity. 
             If natural, continue the conversation with casual conversation.
 
-            The current conversation and any retrieved memories are provided as context. Use them only when they are relevant to the user's request.
+            Use the tools provided below to assist the user when necessary.
+            web_search: Use this tool to search the web for relevant information.
+            db_search: Use this tool to search the database for relevant memories.
+            
         """
-    async def generate_response(self, query: list[dict[str, str]]) -> AsyncGenerator[str, None]:
+    async def generate_response(self, query: list[dict[str, str]], **kwargs: Any) -> AsyncGenerator[Any, None]:
         """Generate a response based on the given messages, memories, and external context.
         
         Args:
@@ -45,9 +51,9 @@ class ResponseGenerator:
         """
         if not isinstance(query, list) or not all(isinstance(msg, dict) and "role" in msg and "content" in msg for msg in query):
             raise ValueError("Query must be a list of dictionaries with 'role' and 'content' keys.")
-        
+
         full_query = [{"role": "system", "content": self.prompt}] + query
 
-        async for token in self.model(full_query):
+        async for token in self.model(full_query, **kwargs):
             yield token
         

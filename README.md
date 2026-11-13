@@ -33,6 +33,8 @@ A privacy-focused personal AI assistant with long-term memory, semantic retrieva
 
 - Local Execution: Runs locally to keep your data private and under your control.
 
+- Web Connectivity — Connects to the internet to search for real-time information, retrieve relevant web content, and provide up-to-date answers.
+
 - Conversational Interface: Enables natural interactions through an intuitive chat-based interface.
 
 - Extensible Architecture — Supports integration of additional tools and capabilities.
@@ -40,13 +42,13 @@ A privacy-focused personal AI assistant with long-term memory, semantic retrieva
 - Lightweight Setup — Simplifies dependency management and development using uv.
 
 ## Installation
-The Python code is located in the python/ directory.
 
 ### Prequisites
 - Python 3.11–3.13
 - [uv](https://docs.astral.sh/uv/)
 - NVIDIA GPU with CUDA 12.4 support
 - NVIDIA driver compatible with CUDA 12.4
+- Docker
 
 ### 1. Clonse the repository
 ```
@@ -121,6 +123,52 @@ uv add --dev pytest
 
 After adding packages, pyproject.toml and uv.lock are updated automatically.
 
+### 7. Searxng Installation
+
+#### Create Configuration Directory
+
+sudo mkdir -p /opt/searxng
+
+#### Create SearXNG Configuration
+
+sudo nano /opt/searxng/settings.yml
+
+Add the following configuration:
+
+```
+use_default_settings: true
+
+search:
+  formats:
+    - html
+    - json
+```
+
+Save and close the file.
+
+#### Run SearXNG Using Docker
+```
+sudo docker run -d \
+  --name searxng \
+  --restart unless-stopped \
+  -p 8080:8080 \
+  -v /opt/searxng/settings.yml:/etc/searxng/settings.yml:ro \
+  searxng/searxng:latest
+```
+
+#### Access SearXNG
+
+Open the following address in your browser:
+```
+http://localhost:8080
+```
+
+#### Test JSON Search API
+
+SearXNG provides a JSON search endpoint that can be accessed using HTTP requests.
+```
+curl "http://localhost:8080/search?q=artificial+intelligence&format=json"
+```
 
 ## Usage
 

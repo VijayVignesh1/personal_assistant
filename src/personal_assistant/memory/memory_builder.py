@@ -95,7 +95,7 @@ class MemoryBuilder:
                 input_context = [{'role': 'system', 'content': system_context}, {'role': 'user', 'content': chunk}]
                 memory_response = ""
                 async for token in self.llm_model(input_context):
-                    memory_response += token
+                    memory_response += token.message.content
                 prospect_memories = json.loads(memory_response)
                 # step 3: narrow down the important memories
                 filtered_memories = [Memory(content=mem["content"], 

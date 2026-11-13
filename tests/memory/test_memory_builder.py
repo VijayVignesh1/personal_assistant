@@ -3,6 +3,7 @@ import uuid
 from collections.abc import AsyncGenerator
 from unittest.mock import patch
 
+import ollama
 import pytest
 
 from personal_assistant.memory.memory_builder import MemoryBuilder
@@ -26,28 +27,62 @@ class MockEmbedding:
     
 @pytest.mark.asyncio
 async def test_create_memories_with_correct_response(memory_builder):
-    fake_response = """
-    [
-        {
-            "content": "Alice went to the park with Bob.",
-            "importance": "0.9",
-            "entities": "Alice, Bob, park"
-        },
-        {
-            "content": "Alice met Charlie at the park.",
-            "importance": "0.8",
-            "entities": "Alice, Charlie, park"
-        },
-        {
-            "content": "Bob and Charlie decided to have a picnic.",
-            "importance": "0.7",
-            "entities": "Bob, Charlie, picnic"
-        }
-    ]
-    """
-    async def mock_async_generator(context) -> AsyncGenerator[str, None]:
-        for char in fake_response:
-            yield char
+
+    async def mock_async_generator(
+        context
+    ) -> AsyncGenerator[ollama.ChatResponse, None]:
+
+        chunks = [
+            ollama.ChatResponse(
+                model="test-model",
+                created_at="2024-06-05T00:00:00Z",
+                done=False,
+                message=ollama.Message(
+                    role="assistant",
+                    content='[\n    {\n        "content": "Alice went to the park with Bob.",',
+                ),
+            ),
+            ollama.ChatResponse(
+                model="test-model",
+                created_at="2024-06-05T00:00:00Z",
+                done=False,
+                message=ollama.Message(
+                    role="assistant",
+                    content='"importance": "0.9", "entities": "Alice, Bob, park"\n    },',
+                ),
+            ),
+            ollama.ChatResponse(
+                model="test-model",
+                created_at="2024-06-05T00:00:00Z",
+                done=False,
+                message=ollama.Message(
+                    role="assistant",
+                    content='\n    {\n        "content": "Alice met Charlie at the park.", "importance": "0.8", "entities": "Alice, Charlie, park"\n    },',
+                ),
+            ),
+            ollama.ChatResponse(
+                model="test-model",
+                created_at="2024-06-05T00:00:00Z",
+                done=False,
+                message=ollama.Message(
+                    role="assistant",
+                    content='\n    {\n        "content": "Bob and Charlie decided to have a picnic.", "importance": "0.7", "entities": "Bob, Charlie, picnic"\n    }\n]',
+                ),
+            ),
+        ]
+
+        for chunk in chunks:
+            yield chunk
+
+        yield ollama.ChatResponse(
+            model="test-model",
+            created_at="2024-06-05T00:00:00Z",
+            done=True,
+            message=ollama.Message(
+                role="assistant",
+                content="",
+            ),
+        )
 
     messages = [
         Message(message_id=str(uuid.uuid4()), episode_id="test_episode", content="Alice went to the park with Bob.", timestamp=str(datetime.datetime.now(tz=datetime.UTC)), role="user"),
@@ -65,7 +100,16 @@ async def test_create_memories_with_correct_response(memory_builder):
 
 @pytest.mark.asyncio
 async def test_create_memories_with_wrong_response(memory_builder):
-    fake_response = "This is a wrong response with incorrect format."
+    fake_response = [ollama.ChatResponse(
+        model="test-model",
+        created_at="2024-06-05T00:00:00Z",
+        done=False,
+        message=ollama.Message(
+            role="assistant",
+            content="This is a wrong response with incorrect format.",
+        ),
+    )]
+    
     async def mock_generate_response(context) -> AsyncGenerator[str, None]:
         for char in fake_response:
             yield char
