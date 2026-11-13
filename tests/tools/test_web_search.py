@@ -1,5 +1,7 @@
 import pytest
+
 from personal_assistant.tools.web_search import web_search
+
 
 @pytest.mark.web
 def test_web_search():
