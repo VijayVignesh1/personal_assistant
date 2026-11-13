@@ -89,6 +89,7 @@ strict = true
 # follow_imports_for_stubs is required: follow_imports alone does not apply
 # to .pyi files, which is exactly where the offending syntax lives.
 [[tool.mypy.overrides]]
-module = ["numpy", "numpy.*"]
+module = ["numpy", "numpy.*", "pynvml"]
 follow_imports = "skip"
 follow_imports_for_stubs = true
+ignore_missing_imports = true
