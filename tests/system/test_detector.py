@@ -15,4 +15,4 @@ def test_detect_system_profile():
     assert hasattr(profile, "os_architecture")
     assert isinstance(profile.os_architecture, str)
     assert isinstance(profile.os_version, str)
-    assert isinstance(profile.python_version, str)
+    assert isinstance(profile.python_versions, tuple)

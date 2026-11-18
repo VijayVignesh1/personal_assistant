@@ -10,8 +10,6 @@ dependencies = [
     "python-dotenv>=1.0",
     "transformers>=4.56.1",
     "deepeval>=4.2.8",
-    "accelerate>=1.15.0",
-    "sentence-transformers>=6.1.0",
     "rank-bm25>=0.2.2",
     "ollama>=0.6.3",
     "chainlit>=2.12.0",
@@ -19,23 +17,27 @@ dependencies = [
     "bs4>=0.0.2",
     "trafilatura>=2.3.1",
     "tiktoken>=0.14.0",
-    "py-cpuinfo>=9.0.0",
+    "psutil>=7.2.2",
+    "bitsandbytes>=0.50.2",
 ]
+
+
+[tool.personal-assistant.requirements]
+minimum-ram = "8 GB"
+recommended-ram = "16 GB"
+
+minimum-storage = "2 GB"
+recommended-storage = "10 GB"
 
 [project.optional-dependencies]
 
-cpu = [
-    "torch>=2.6.0"
+ml = [
+    "accelerate>=1.15.0",
+    "sentence-transformers>=6.1.0",
 ]
 
 nvidia = [
-    "torch>=2.6.0",
-    "bitsandbytes>=0.50.2",
     "nvidia-ml-py>=13.0"
-]
-
-apple = [
-    "torch>=2.6.0"
 ]
 
 [dependency-groups]
@@ -46,19 +48,12 @@ dev = [
     "pytest-cov>=7.1.0",
     "types-tabulate>=0.10.0.20261006",
     "types-psutil>=7.2.2.20260906",
+    "types-requests>=2.33.0.20261030",
 ]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-
-[tool.uv.sources]
-torch = { index = "pytorch-cu124" }
-
-[[tool.uv.index]]
-name = "pytorch-cu124"
-url = "https://download.pytorch.org/whl/cu124"
-explicit = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/personal_assistant"]
@@ -78,6 +73,7 @@ target-version = "py311"
 [tool.mypy]
 python_version = "3.11"
 strict = true
+ignore_missing_imports = true
 
 # numpy arrives transitively via rank-bm25; we never touch it directly.
 # It ships py.typed stubs, so mypy follows them, and recent numpy releases
@@ -93,3 +89,8 @@ module = ["numpy", "numpy.*", "pynvml"]
 follow_imports = "skip"
 follow_imports_for_stubs = true
 ignore_missing_imports = true
+
+[project.scripts]
+personal-assistant = "personal_assistant.main:main"
+personal-assistant-install = "personal_assistant.installer.installer:main"
+personal-assistant-update = "personal_assistant.installer.installer:update"

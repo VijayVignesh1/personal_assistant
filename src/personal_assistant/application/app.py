@@ -15,7 +15,7 @@ from personal_assistant.objects.message import Message
 from personal_assistant.response.response_generator import ResponseGenerator
 from personal_assistant.retriever.retrieval import RetrievalMethod
 from personal_assistant.tools.db_search import db_search, db_search_tool
-from personal_assistant.tools.web_search import web_search_tool
+from personal_assistant.tools.web_search import web_search, web_search_tool  # noqa: F401
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DB_PATH = PROJECT_ROOT / "database" / "personal_assistant.db"
@@ -68,7 +68,6 @@ class Application:
         for _ in range(3):
             async for chunk in self.response_generator.generate_response(context, tools=self.tools, think=True):
                 if chunk.message.tool_calls:
-                    print(chunk.message.tool_calls)
                     for tool in chunk.message.tool_calls:        
                         if tool.function.name == "db_search":
                             func: ToolFunction = partial(
