@@ -1,4 +1,4 @@
-import cpuinfo  # type: ignore[import-untyped]
+import cpuinfo
 import psutil
 
 from personal_assistant.system.schema import CPUInfo

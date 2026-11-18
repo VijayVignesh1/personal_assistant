@@ -58,6 +58,6 @@ class SystemProfile:
     memory: MemoryInfo
     disk: DiskInfo
 
-    python_version: str
+    python_versions: tuple[dict[str, str],...]
 
     gpus: tuple[GPUInfo,...] = ()

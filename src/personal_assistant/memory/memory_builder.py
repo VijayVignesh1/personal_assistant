@@ -2,7 +2,7 @@ import datetime
 import json
 import uuid
 
-from tqdm import tqdm  # type: ignore[import-untyped]
+from tqdm import tqdm
 
 from personal_assistant.models.base import BaseEmbeddingModel, BaseLLM
 from personal_assistant.objects.memory import Memory

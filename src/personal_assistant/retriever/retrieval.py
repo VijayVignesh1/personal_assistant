@@ -2,7 +2,7 @@ import re
 from typing import Any, Literal, get_args
 
 import numpy as np
-from rank_bm25 import BM25Okapi  # type: ignore[import-untyped]
+from rank_bm25 import BM25Okapi
 
 from personal_assistant.models.base import BaseEmbeddingModel
 from personal_assistant.objects.memory import Memory

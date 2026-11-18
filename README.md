@@ -39,15 +39,13 @@ A privacy-focused personal AI assistant with long-term memory, semantic retrieva
 
 - Extensible Architecture — Supports integration of additional tools and capabilities.
 
-- Lightweight Setup — Simplifies dependency management and development using uv.
+- Quickfire Setup — Automatically install the app irrespective of any hardware.
 
 ## Installation
 
 ### Prequisites
 - Python 3.11–3.13
 - [uv](https://docs.astral.sh/uv/)
-- NVIDIA GPU with CUDA 12.4 support
-- NVIDIA driver compatible with CUDA 12.4
 - Docker
 
 ### 1. Clonse the repository
@@ -56,125 +54,49 @@ git clone <repository-url>
 cd personal_assistant
 ```
 
-### 2. Create the virtual environent
+### 2. Install Project in Editable Mode
 ```
-uv venv --python 3.11
-```
-
-### 3. Activate the virtual environment
-#### macOS / Linux
-```
-source .venv/bin/activate
+uv pip install -e .
 ```
 
-#### Windows:
+### 3. Installation CLI
+Install the application and its dependencies:
 ```
-.venv\Scripts\activate
+personal-assistant-install
 ```
-
-### 4. Install dependencies
-
-Install the project and development dependencies:
-
+#### Developer Installation
+If you are a contributor, use:
 ```
-uv sync
+personal-assistant-install --dev
 ```
 
-This installs the dependencies defined in pyproject.toml and creates/updates uv.lock.
-
-NOTE: In order to run the models on GPU CUDA, make sure to install the pytorch version compatible with the underlying CUDA version. To find the cuda version, run `nvidia-smi`. For example, if the cuda version is 12.5, install any pytorch version with cuda 12.5 and below as shown below:
+To update the application, use:
 ```
-uv pip install torch --index-url https://download.pytorch.org/whl/cu124
+personal-assistant-update
 ```
 
-
-### 5. Verify the installation
+### 4. Verify the installation
 
 #### Run the test suite
 ```
-uv run pytest
+uv run --no-sync pytest
 ```
 
 #### Run linting
 ```
-uv run ruff check . --fix
+uv run --no-sync ruff check . --fix
 ```
 
 #### Run type checking
 ```
-uv run mypy src
-```
-
-### 6. Adding a Package
-
-#### To add a production dependency
-```
-uv add <package-name>
-```
-For example:
-```
-uv add numpy
-```
-
-#### To add a development dependency
-```
-uv add --dev pytest
-```
-
-After adding packages, pyproject.toml and uv.lock are updated automatically.
-
-### 7. Searxng Installation
-
-#### Create Configuration Directory
-
-sudo mkdir -p /opt/searxng
-
-#### Create SearXNG Configuration
-
-sudo nano /opt/searxng/settings.yml
-
-Add the following configuration:
-
-```
-use_default_settings: true
-
-search:
-  formats:
-    - html
-    - json
-```
-
-Save and close the file.
-
-#### Run SearXNG Using Docker
-```
-sudo docker run -d \
-  --name searxng \
-  --restart unless-stopped \
-  -p 8080:8080 \
-  -v /opt/searxng/settings.yml:/etc/searxng/settings.yml:ro \
-  searxng/searxng:latest
-```
-
-#### Access SearXNG
-
-Open the following address in your browser:
-```
-http://localhost:8080
-```
-
-#### Test JSON Search API
-
-SearXNG provides a JSON search endpoint that can be accessed using HTTP requests.
-```
-curl "http://localhost:8080/search?q=artificial+intelligence&format=json"
+uv run --no-sync mypy src
 ```
 
 ## Usage
 
 1. Launch the chainlit application using:
 ```
-chainlit run main.py -w
+personal-assistant
 ```
 2. A chat window should open in the default browser automatically. If not, navigate to `http://localhost:8000/`
 

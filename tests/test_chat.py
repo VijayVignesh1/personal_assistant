@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from personal_assistant import main
+from personal_assistant import chat
 from personal_assistant.application.app import Application
 
 
@@ -31,17 +31,17 @@ async def test_chat_streams_response():
 
     with (
         patch.object(
-            main.cl.user_session,
+            chat.cl.user_session,
             "get",
             return_value=application,
         ),
         patch.object(
-            main.cl,
+            chat.cl,
             "Message",
             return_value=response,
         ),
     ):
-        await main.chat(incoming_message)
+        await chat.chat(incoming_message)
 
     assert response.stream_token.await_count == 2
 
@@ -55,10 +55,10 @@ async def test_cleanup_closes_episode():
     application.close_episode = AsyncMock()
 
     with patch.object(
-        main.cl.user_session,
+        chat.cl.user_session,
         "get",
         return_value=application,
     ):
-        await main.cleanup()
+        await chat.cleanup()
 
     application.close_episode.assert_awaited_once()

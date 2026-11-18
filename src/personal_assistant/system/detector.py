@@ -1,9 +1,8 @@
-import sys
-
 from personal_assistant.system.cpu import get_cpu_info
 from personal_assistant.system.gpu import get_gpus
 from personal_assistant.system.memory import get_disk_info, get_memory_info
 from personal_assistant.system.os import detect_os, detect_os_architecture, detect_os_version
+from personal_assistant.system.python import find_python_versions
 from personal_assistant.system.schema import SystemProfile
 
 
@@ -15,7 +14,7 @@ def detect_system_profile() -> SystemProfile:
     gpu_list = get_gpus()
     os_version = detect_os_version()
     os_architecture = detect_os_architecture()
-    python_version = sys.version
+    python_versions = find_python_versions()
     return SystemProfile(
         os=os_info,
         os_version=os_version,
@@ -24,7 +23,7 @@ def detect_system_profile() -> SystemProfile:
         disk=disk_info,
         cpu=cpu_info,
         gpus=gpu_list,
-        python_version=python_version
+        python_versions=tuple(python_versions)
     )
 
 def main() -> None:
