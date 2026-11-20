@@ -185,9 +185,11 @@ class causalLM(BaseLLM):
         if not isinstance(query, list) or not all(isinstance(msg, dict) and "role" in msg and "content" in msg for msg in query):
             raise ValueError("Query must be a list of dictionaries with 'role' and 'content' keys.")
 
+
         response = await AsyncClient().chat(model=self.model_name, 
                                             messages=query, 
                                             stream=True, 
+                                            options={"num_ctx": 8096}, 
                                             **kwargs)
 
         async for chunk in response:

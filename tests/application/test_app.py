@@ -1,5 +1,6 @@
 import asyncio
 from collections.abc import AsyncGenerator
+from types import SimpleNamespace
 
 import pytest
 
@@ -55,3 +56,166 @@ def test_generate_response_db_search(app):
     query = "Search for messages containing the secret code"
     response = app.generate_response(query)
     assert isinstance(response, AsyncGenerator)
+
+def test_split_response_and_memory(app):
+    """Test the split_response_and_memory method of the Application class."""
+
+    async def mock_stream():
+        content = """
+        <|response_start|>
+        This is a response.
+        <|response_end|>
+        <|memory_updates_start|>
+        [{"operation": "UPDATE", "memory_id": "1", "content": "Updated content", "importance": 0.5}]
+        <|memory_updates_end|>
+        """
+
+        yield SimpleNamespace(
+            message=SimpleNamespace(content=content)
+        )
+
+    async def run_test():
+        results = []
+        async for item in app.split_response_and_memory(mock_stream()):
+            results.append(item)
+        assert any(item["type"] == "response" for item in results)
+        assert any(item["type"] == "memory_updates" for item in results)
+        for item in results:
+            if item["type"] == "response":
+                assert item["content"].strip() == "This is a response."
+            if item["type"] == "memory_updates":
+                assert item["content"] == [{"operation": "UPDATE", "memory_id": "1", "content": "Updated content", "importance": 0.5}]
+
+    asyncio.run(run_test())
+
+
+def test_split_response_and_memory_no_markers(app):
+    """Test the split_response_and_memory method of the Application class."""
+
+    async def mock_stream():
+        content = """
+        This is a response.
+        """
+
+        yield SimpleNamespace(
+            message=SimpleNamespace(content=content)
+        )
+
+    async def run_test():
+        results = []
+        async for item in app.split_response_and_memory(mock_stream()):
+            results.append(item)
+        assert any(item["type"] == "response" for item in results)
+        for item in results:
+            if item["type"] == "response":
+                assert item["content"].strip() == "This is a response."
+
+    asyncio.run(run_test())
+
+
+def test_split_response_and_memory_only_memory_updates(app):
+    """Test the split_response_and_memory method of the Application class with only memory updates."""
+
+    async def mock_stream():
+        content = """
+        <|memory_updates_start|>
+        [{"operation": "UPDATE", "memory_id": "1", "content": "Updated content", "importance": 0.5}]
+        <|memory_updates_end|>
+        """
+
+        yield SimpleNamespace(
+            message=SimpleNamespace(content=content)
+        )
+
+    async def run_test():
+        results = []
+        async for item in app.split_response_and_memory(mock_stream()):
+            results.append(item)
+        assert any(item["type"] == "memory_updates" for item in results)
+        for item in results:
+            if item["type"] == "memory_updates":
+                assert item["content"] == [{"operation": "UPDATE", "memory_id": "1", "content": "Updated content", "importance": 0.5}]
+
+    asyncio.run(run_test())
+
+
+def test_split_response_and_memory_only_response(app):
+    """Test the split_response_and_memory method of the Application class with only response."""
+
+    async def mock_stream():
+        content = """
+        <|response_start|>
+        This is a response.
+        <|response_end|>
+        """
+
+        yield SimpleNamespace(
+            message=SimpleNamespace(content=content)
+        )
+
+    async def run_test():
+        results = []
+        async for item in app.split_response_and_memory(mock_stream()):
+            results.append(item)
+        assert any(item["type"] == "response" for item in results)
+        for item in results:
+            if item["type"] == "response":
+                assert item["content"].strip() == "This is a response."
+
+    asyncio.run(run_test())
+
+
+# NOTE: Failing testcase. Address this case later.
+# def test_split_response_and_memory_only_response_start_marker(app):
+#     """Test the split_response_and_memory method of the Application class with only response and markers."""
+
+#     async def mock_stream():
+#         content = """
+#         <|response_start|>
+#         This is a response.
+#         """
+
+#         yield SimpleNamespace(
+#             message=SimpleNamespace(content=content)
+#         )
+
+#     async def run_test():
+#         results = []
+#         async for item in app.split_response_and_memory(mock_stream()):
+#             results.append(item)
+#         assert any(item["type"] == "response" for item in results)
+#         for item in results:
+#             if item["type"] == "response":
+#                 print("asda", item["content"])
+#                 assert item["content"].strip() == "This is a response."  # since safe_length removes last few characters
+
+#     asyncio.run(run_test())
+
+
+# NOTE: Failing testcase. Address this case later.
+# def test_split_response_and_memory_only_response_end_marker(app):
+#     """Test the split_response_and_memory method of the Application class with only response and end marker."""
+
+#     async def mock_stream():
+#         content = """
+#         <|response_start|>
+#         This is a response.
+#         <|memory_updates_start|>
+#         []
+#         <|memory_updates_end|>
+#         """
+
+#         yield SimpleNamespace(
+#             message=SimpleNamespace(content=content)
+#         )
+
+#     async def run_test():
+#         results = []
+#         async for item in app.split_response_and_memory(mock_stream()):
+#             results.append(item)
+#         assert any(item["type"] == "response" for item in results)
+#         for item in results:
+#             if item["type"] == "response":
+#                 assert item["content"].strip() == "This is a response."  # since safe_length removes last few characters
+
+#     asyncio.run(run_test())

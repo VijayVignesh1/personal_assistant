@@ -68,7 +68,7 @@ class Database:
                 id TEXT PRIMARY KEY,
                 message_id TEXT NOT NULL REFERENCES message(message_id),
                 episode_id TEXT NOT NULL REFERENCES episode (episode_id),
-                memory_id TEXT REFERENCES memory(memory_id),
+                memory_id TEXT REFERENCES memory(memory_id) ON DELETE SET NULL,
                 retrieved_content TEXT NOT NULL,
                 similarity_score REAL,
                 retrieval_rank INTEGER,
@@ -231,6 +231,50 @@ class Database:
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                 ''', (memory.content, memory.timestamp, memory.importance, memory.episode_id, memory.memory_id, memory.embedding, memory.model_name))
             db.commit()
+        except Exception:
+            db.rollback()
+            raise
+        finally:
+            self._close()
+
+    def update_memory(self, memory: Memory) -> None:
+        """
+        Update an existing Memory instance in the database.
+        :param memory: The Memory instance to update.
+        """
+        if not self.connection:
+            self._connect()
+        db = self.connection
+        assert db is not None, "Database connection is not established."
+        try:
+            cursor = db.execute('''
+                UPDATE memory
+                SET content = ?, timestamp = ?, importance = ?, episode_id = ?, embedding = ?, model_name = ?
+                WHERE memory_id = ?
+            ''', (memory.content, memory.timestamp, memory.importance, memory.episode_id, memory.embedding, memory.model_name, memory.memory_id))
+            db.commit()
+            if cursor.rowcount == 0:
+                raise ValueError(f"Memory {memory.memory_id} does not exist.")
+        except Exception:
+            db.rollback()
+            raise
+        finally:
+            self._close()
+
+    def delete_memory(self, memory_id: str) -> None:
+        """
+        Delete a memory from the database by its memory ID.
+        :param memory_id: The ID of the memory to delete.
+        """
+        if not self.connection:
+            self._connect()
+        db = self.connection
+        assert db is not None, "Database connection is not established."
+        try:
+            cursor = db.execute('DELETE FROM memory WHERE memory_id = ?', (memory_id,))
+            db.commit()
+            if cursor.rowcount == 0:
+                raise ValueError(f"Memory {memory_id} does not exist.")
         except Exception:
             db.rollback()
             raise

@@ -39,7 +39,7 @@ async def db_search(query: str,
     memories = ""
     # step 3: append relevant memories
     for memory in relevant_memories:
-        memories += memory.content + "\n"
+        memories += "Memory id: " + memory.memory_id + "\t Memory: " + memory.content + "\n"
 
     return memories
 
@@ -47,7 +47,7 @@ db_search_tool = {
         "type": "function",
         "function": {
             "name": "db_search",
-            "description": "Search the database and retrieve relevant memories about the user.",
+            "description": "Search the user's memory database for relevant stored information, retrieve matching memories, and return contextual details that can help personalize responses.",
             "parameters": {
                 "type": "object",
                 "properties": {

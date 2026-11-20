@@ -29,7 +29,7 @@ A privacy-focused personal AI assistant with long-term memory, semantic retrieva
 
 ## Features
 
-- Persistent Memory: Retains important context across sessions for a personalized experience.
+- Persistent Memory: Retains important context across sessions for a personalized experience with constant updation and deletion.
 
 - Local Execution: Runs locally to keep your data private and under your control.
 
