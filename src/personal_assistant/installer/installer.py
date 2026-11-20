@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from personal_assistant.installer.env_analysis import analyze_environment
-from personal_assistant.installer.services import ensure_uv, install_searxng
+from personal_assistant.installer.services import ensure_uv, install_searxng, ensure_docker_installed
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 VENV_DIR = PROJECT_ROOT / ".venv"
@@ -71,6 +71,9 @@ def install(tomlconfig: dict[str, Any], dev: bool) -> None:
     # Install development dependencies if requested
     if dev:
         run("pip", "install", "--group", "dev")
+
+    # Install docker automatically
+    ensure_docker_installed()
 
     # Install SearXNG
     install_searxng()

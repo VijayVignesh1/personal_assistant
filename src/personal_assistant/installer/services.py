@@ -2,6 +2,8 @@ import secrets
 import shutil
 import subprocess
 from pathlib import Path
+import platform
+import time
 
 import yaml
 
@@ -48,6 +50,80 @@ def configure_searxng() -> None:
 
     print("SearXNG configuration updated.")
     print("JSON API enabled.")
+
+
+def ensure_docker_installed() -> None:
+    """Install and start Docker on macOS or Linux."""
+
+    system = platform.system().lower()
+
+    if not shutil.which("docker"):
+
+        print("Docker not found. Installing...")
+
+        if system == "darwin":
+
+            if not shutil.which("brew"):
+                raise RuntimeError(
+                    "Please install Homebrew first: https://brew.sh/"
+                )
+
+            subprocess.run(
+                ["brew", "install", "--cask", "docker"],
+                check=True
+            )
+
+        elif system == "linux":
+
+            if shutil.which("apt-get"):
+                subprocess.run(
+                    ["sudo", "apt-get", "update"],
+                    check=True
+                )
+                subprocess.run(
+                    ["sudo", "apt-get", "install", "-y", "docker.io"],
+                    check=True
+                )
+
+            elif shutil.which("dnf"):
+                subprocess.run(
+                    ["sudo", "dnf", "install", "-y", "docker"],
+                    check=True
+                )
+
+            else:
+                raise RuntimeError(
+                    "Unsupported Linux package manager."
+                )
+
+        else:
+            raise RuntimeError(f"Unsupported OS: {system}")
+
+    # Start Docker
+    if system == "darwin":
+        subprocess.run(["open", "-a", "Docker"], check=True)
+
+    elif system == "linux":
+        subprocess.run(
+            ["sudo", "systemctl", "enable", "--now", "docker"],
+            check=True
+        )
+
+    # Wait for Docker daemon
+    for _ in range(60):
+        result = subprocess.run(
+            ["docker", "info"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+
+        if result.returncode == 0:
+            print("Docker is ready!")
+            return
+
+        time.sleep(2)
+
+    raise RuntimeError("Docker failed to start.")
 
 def ensure_uv() -> str:
     """Find uv or install it if missing."""
