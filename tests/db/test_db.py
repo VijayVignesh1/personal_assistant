@@ -186,3 +186,43 @@ def test_add_and_get_retrieved_contexts(db):
     assert any(ctx.memory_id == memory_id for ctx in retrieved_contexts)
     assert any(ctx.retrieved_content == "This is a test retrieved context." for ctx in retrieved_contexts)
     print("PASS: get_retrieved_contexts")
+
+def test_update_memory(db):
+    episode_id = db.create_episode(Episode(episode_id=str(uuid.uuid4()), started_at=datetime.datetime.now(tz=datetime.UTC).isoformat()))
+    memory_id = str(uuid.uuid4())
+    memory = Memory(
+        memory_id=memory_id,
+        content="This is a test memory.",
+        timestamp=datetime.datetime.now(tz=datetime.UTC).isoformat(),
+        importance=0.9,
+        episode_id=episode_id,
+        embedding=np.array([0.1, 0.2, 0.3], dtype=np.float32).tobytes(),
+        model_name="text-embedding-3-small"
+    )
+    db.save_memory([memory])
+    # Update the memory content and importance
+    memory.content = "This is an updated test memory."
+    memory.importance = 0.8
+    db.update_memory(memory)
+    updated_memories = db.get_all_memories()
+    assert any(mem.content == "This is an updated test memory." for mem in updated_memories)
+    assert any(mem.importance == 0.8 for mem in updated_memories)
+    print("PASS: update_memory")
+
+def test_delete_memory(db):
+    episode_id = db.create_episode(Episode(episode_id=str(uuid.uuid4()), started_at=datetime.datetime.now(tz=datetime.UTC).isoformat()))
+    memory_id = str(uuid.uuid4())
+    memory = Memory(
+        memory_id=memory_id,
+        content="This is a test memory.",
+        timestamp=datetime.datetime.now(tz=datetime.UTC).isoformat(),
+        importance=0.9,
+        episode_id=episode_id,
+        embedding=np.array([0.1, 0.2, 0.3], dtype=np.float32).tobytes(),
+        model_name="text-embedding-3-small"
+    )
+    db.save_memory([memory])
+    db.delete_memory(memory_id)
+    deleted_memories = db.get_all_memories()
+    assert all(mem is None for mem in deleted_memories)
+    print("PASS: delete_memory")

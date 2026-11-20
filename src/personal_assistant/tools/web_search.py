@@ -6,7 +6,7 @@ import trafilatura
 
 SEARXNG_URL = "http://localhost:8080"
 
-MAX_TOKENS = 4096
+MAX_TOKENS = 1024
 MAX_RESULTS = 5
 
 from trafilatura.settings import DEFAULT_CONFIG

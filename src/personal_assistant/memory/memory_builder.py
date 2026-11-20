@@ -83,6 +83,16 @@ class MemoryBuilder:
                 seen_contents.add(mem.content)
                 deduplicated.append(mem)
         return deduplicated
+
+    async def create_updated_memory(self, memory_id: str, new_content: str, importance: float, episode_id: str) -> Memory:
+        """Update the content of a memory with the given memory ID."""
+        return Memory(content=new_content,
+                      timestamp=str(datetime.datetime.now(tz=datetime.UTC)),
+                      importance=importance,
+                      episode_id=episode_id,
+                      memory_id=memory_id,
+                      embedding=await self.embedding_model(new_content),
+                      model_name=self.embedding_model.model_name)
     
     async def create_memories(self, messages: list[Message], episode_id: str) -> list[Memory]:
         """Create memories for the given episode ID."""
