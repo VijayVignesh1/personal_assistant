@@ -1,6 +1,8 @@
+import platform
 import secrets
 import shutil
 import subprocess
+import time
 from pathlib import Path
 
 import yaml
@@ -49,67 +51,80 @@ def configure_searxng() -> None:
     print("SearXNG configuration updated.")
     print("JSON API enabled.")
 
-def ensure_uv() -> str:
-    """Find uv or install it if missing."""
 
-    import os
-    import pwd
-    import shutil
-    import subprocess
-    from pathlib import Path
+def ensure_docker_installed() -> None:
+    """Install and start Docker on macOS or Linux."""
 
-    # Check PATH first
-    uv_path = shutil.which("uv")
+    system = platform.system().lower()
 
-    if uv_path:
-        print(f"uv is already installed: {uv_path}")
-        return uv_path
+    if not shutil.which("docker"):
 
-    # Detect original user
-    sudo_user = os.environ.get("SUDO_USER")
+        print("Docker not found. Installing...")
 
-    if sudo_user:
-        user_home = Path(pwd.getpwnam(sudo_user).pw_dir)
-    else:
-        user_home = Path.home()
+        if system == "darwin":
 
-    # Check common installation locations
-    possible_paths = [
-        user_home / "miniconda3/bin/uv",
-        user_home / ".local/bin/uv",
-        Path("/root/.local/bin/uv"),
-        Path("/usr/local/bin/uv"),
-    ]
+            if not shutil.which("brew"):
+                raise RuntimeError(
+                    "Please install Homebrew first: https://brew.sh/"
+                )
 
-    for path in possible_paths:
-        if path.is_file():
-            print(f"uv is already installed: {path}")
-            return str(path)
+            subprocess.run(
+                ["brew", "install", "--cask", "docker"],
+                check=True
+            )
 
-    # Install uv only if genuinely missing
-    print("uv not found. Installing uv...")
+        elif system == "linux":
 
-    subprocess.run(
-        [
-            "bash",
-            "-c",
-            "curl -LsSf https://astral.sh/uv/install.sh | sh"
-        ],
-        check=True,
-    )
+            if shutil.which("apt-get"):
+                subprocess.run(
+                    ["sudo", "apt-get", "update"],
+                    check=True
+                )
+                subprocess.run(
+                    ["sudo", "apt-get", "install", "-y", "docker.io"],
+                    check=True
+                )
 
-    possible_paths = [
-        Path.home() / ".local/bin/uv",
-        user_home / ".local/bin/uv",
-        Path("/root/.local/bin/uv"),
-    ]
+            elif shutil.which("dnf"):
+                subprocess.run(
+                    ["sudo", "dnf", "install", "-y", "docker"],
+                    check=True
+                )
 
-    for path in possible_paths:
-        if path.is_file():
-            print(f"uv installed successfully: {path}")
-            return str(path)
+            else:
+                raise RuntimeError(
+                    "Unsupported Linux package manager."
+                )
 
-    raise RuntimeError("uv installation failed.")
+        else:
+            raise RuntimeError(f"Unsupported OS: {system}")
+
+    # Start Docker
+    if system == "darwin":
+        subprocess.run(["open", "-a", "Docker"], check=True)
+
+    elif system == "linux":
+        subprocess.run(
+            ["sudo", "systemctl", "enable", "--now", "docker"],
+            check=True
+        )
+
+    # Wait for Docker daemon
+    for _ in range(60):
+        result = subprocess.run(
+            ["docker", "info"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False
+        )
+
+        if result.returncode == 0:
+            print("Docker is ready!")
+            return
+
+        time.sleep(2)
+
+    raise RuntimeError("Docker failed to start.")
 
 def install_searxng() -> None:
     """Install and start SearXNG using Docker."""

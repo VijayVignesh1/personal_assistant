@@ -22,14 +22,6 @@ dependencies = [
     "py-cpuinfo>=9.0.0",
 ]
 
-
-[tool.personal-assistant.requirements]
-minimum-ram = "8 GB"
-recommended-ram = "16 GB"
-
-minimum-storage = "2 GB"
-recommended-storage = "10 GB"
-
 [project.optional-dependencies]
 
 ml = [
@@ -41,7 +33,6 @@ nvidia = [
     "nvidia-ml-py>=13.0"
 ]
 
-[dependency-groups]
 dev = [
     "pytest",
     "ruff",
