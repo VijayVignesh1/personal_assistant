@@ -54,12 +54,17 @@ git clone <repository-url>
 cd personal_assistant
 ```
 
-### 2. Install Project in Editable Mode
+### 2. Create and activate virtual environment
 ```
-uv pip install -e .
+python3 -m venv .venv
+source .venv/bin/activate
+```
+### 3. Install the project
+```
+./install.sh
 ```
 
-### 3. Installation CLI
+### 4. Installation CLI
 Install the application and its dependencies:
 ```
 personal-assistant-install
@@ -75,7 +80,7 @@ To update the application, use:
 personal-assistant-update
 ```
 
-### 4. Verify the installation
+### 5. Verify the installation
 
 #### Run the test suite
 ```

@@ -1,9 +1,9 @@
+import platform
 import secrets
 import shutil
 import subprocess
-from pathlib import Path
-import platform
 import time
+from pathlib import Path
 
 import yaml
 
@@ -114,7 +114,8 @@ def ensure_docker_installed() -> None:
         result = subprocess.run(
             ["docker", "info"],
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            stderr=subprocess.DEVNULL,
+            check=False
         )
 
         if result.returncode == 0:
@@ -124,68 +125,6 @@ def ensure_docker_installed() -> None:
         time.sleep(2)
 
     raise RuntimeError("Docker failed to start.")
-
-def ensure_uv() -> str:
-    """Find uv or install it if missing."""
-
-    import os
-    import pwd
-    import shutil
-    import subprocess
-    from pathlib import Path
-
-    # Check PATH first
-    uv_path = shutil.which("uv")
-
-    if uv_path:
-        print(f"uv is already installed: {uv_path}")
-        return uv_path
-
-    # Detect original user
-    sudo_user = os.environ.get("SUDO_USER")
-
-    if sudo_user:
-        user_home = Path(pwd.getpwnam(sudo_user).pw_dir)
-    else:
-        user_home = Path.home()
-
-    # Check common installation locations
-    possible_paths = [
-        user_home / "miniconda3/bin/uv",
-        user_home / ".local/bin/uv",
-        Path("/root/.local/bin/uv"),
-        Path("/usr/local/bin/uv"),
-    ]
-
-    for path in possible_paths:
-        if path.is_file():
-            print(f"uv is already installed: {path}")
-            return str(path)
-
-    # Install uv only if genuinely missing
-    print("uv not found. Installing uv...")
-
-    subprocess.run(
-        [
-            "bash",
-            "-c",
-            "curl -LsSf https://astral.sh/uv/install.sh | sh"
-        ],
-        check=True,
-    )
-
-    possible_paths = [
-        Path.home() / ".local/bin/uv",
-        user_home / ".local/bin/uv",
-        Path("/root/.local/bin/uv"),
-    ]
-
-    for path in possible_paths:
-        if path.is_file():
-            print(f"uv installed successfully: {path}")
-            return str(path)
-
-    raise RuntimeError("uv installation failed.")
 
 def install_searxng() -> None:
     """Install and start SearXNG using Docker."""
