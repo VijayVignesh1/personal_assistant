@@ -175,11 +175,11 @@ class Application:
         context = []
         for message in last_messages:
             context.append({'role': message.role, 'content': message.content})
-    
+
         # Tool calling LLM
         tools_result = ""
         for _ in range(3):
-            async for chunk in self.response_generator.generate_response(context, tools=self.tools, think=True):
+            async for chunk in self.response_generator.generate_response([context[-1]], tools=self.tools, think=False):
                 if chunk.message.tool_calls:
                     for tool in chunk.message.tool_calls:        
                         func: ToolFunction = globals()[tool.function.name]
@@ -203,8 +203,8 @@ class Application:
         else:
             result = func(query=query)
         tools_result += f"Tool: db_search, Arguments: {{'query': query}}, Result: {result}\n"
-
-        context.append({'role': 'system', 'content': tools_result})
+        print(f"Tools result: {tools_result}")
+        context.append({'role': 'user', 'content': tools_result})
         context.append({'role': 'user', 'content': last_messages[-1].content})
 
         stream = self.response_generator.generate_response(
@@ -215,7 +215,7 @@ class Application:
         )
         response = ""
         update: dict[str, str]
-        
+        memories = []
         async for item in self.split_response_and_memory(stream):
             if item["type"] == "response":
                 response += item["content"]
@@ -233,16 +233,28 @@ class Application:
                                 importance=float(update["importance"]),
                                 episode_id=self.episode_id
                             )
-                            print(f"Updating memory: {memory_update.memory_id}")
+                            print(f"Updating memory: {memory_update.memory_id} - {memory_update.content}")
                             self.db.update_memory(memory_update)
                         except ValueError as e:
                             print(f"Failed to update memory: {update['memory_id']}, Error: {e}")
                     if update["operation"] == "DELETE":
                         try:
-                            print(f"Deleting memory: {update['memory_id']}")
+                            print(f"Deleting memory: {update['memory_id']} - {update['content']}")
                             self.db.delete_memory(update["memory_id"])
                         except ValueError as e:
                             print(f"Failed to delete memory: {update['memory_id']}, Error: {e}")
+                    if update["operation"] == "ADD":
+                        try:
+                            memory = await self.memory_builder.create_new_memory(
+                                content=update["content"], 
+                                importance=float(update["importance"]),
+                                episode_id=self.episode_id
+                            )
+                            print(f"Adding new memory: {memory.memory_id} - {memory.content}")
+                            memories.append(memory)
+                        except ValueError as e:
+                            print(f"Failed to add memory: {update['content']}, Error: {e}")
+        self.db.save_memory(memories)
 
         # step 3: add the generated response to the episode
         response_id = str(uuid.uuid4())

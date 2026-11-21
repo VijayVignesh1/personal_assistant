@@ -93,6 +93,16 @@ class MemoryBuilder:
                       memory_id=memory_id,
                       embedding=await self.embedding_model(new_content),
                       model_name=self.embedding_model.model_name)
+
+    async def create_new_memory(self, content: str, importance: float, episode_id: str) -> Memory:
+        """Create a new memory with the given content and importance."""
+        return Memory(content=content,
+                      timestamp=str(datetime.datetime.now(tz=datetime.UTC)),
+                      importance=importance,
+                      episode_id=episode_id,
+                      memory_id=str(uuid.uuid4()),
+                      embedding=await self.embedding_model(content),
+                      model_name=self.embedding_model.model_name)
     
     async def create_memories(self, messages: list[Message], episode_id: str) -> list[Memory]:
         """Create memories for the given episode ID."""
