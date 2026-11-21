@@ -18,8 +18,9 @@ from personal_assistant.retriever.retrieval import RetrievalMethod
 from personal_assistant.tools.db_search import db_search
 from personal_assistant.tools.web_search import web_search, web_search_tool  # noqa: F401
 
-PROJECT_ROOT = Path(__file__).resolve().parents[3]
-DB_PATH = PROJECT_ROOT / "database" / "personal_assistant.db"
+DATA_DIR = Path.home() / ".local" / "share" / "diary.AI"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+DB_PATH = DATA_DIR / "personal_assistant.db"
 
 ToolFunction = (
     Callable[..., str]
