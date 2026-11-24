@@ -185,8 +185,8 @@ async def generate_response(
     response = ""
 
     async for chunk in response_generator.generate_response(context):
-        response += chunk
-        print(chunk, end="", flush=True)
+        response += chunk.message.content
+        # print(chunk, end="", flush=True)
 
     return response
 
@@ -219,8 +219,6 @@ async def save_responses(
             question=question,
             relevant_memories=relevant_memories
         )
-
-        print("\n")
 
         # Store evaluation results.
         results.append({
