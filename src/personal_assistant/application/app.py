@@ -269,8 +269,9 @@ class Application:
         """Ensure the episode is ended when closing the episode and create memories."""
         print(f"Closing episode {self.episode_id} at {datetime.datetime.now(tz=datetime.UTC)!s}")
         # create memories for the episode
-        all_messages = self.db.get_messages_by_episode(episode_id=self.episode_id)
-        memories = await self.memory_builder.create_memories(all_messages, episode_id=self.episode_id)
+        # use only user's messages for creating memories
+        all_user_messages = [msg for msg in self.db.get_messages_by_episode(episode_id=self.episode_id) if msg.role == "user"]
+        memories = await self.memory_builder.create_memories(all_user_messages, episode_id=self.episode_id)
         self.db.save_memory(memories)
         print(f"Saved memories for episode {[memory.content for memory in memories]}")
         self.ended_at = str(datetime.datetime.now(tz=datetime.UTC))
@@ -278,7 +279,8 @@ class Application:
 
 async def main() -> None:
     app = Application(llm_model_name="gemma4:e2b", 
-                      embedding_model_name="Qwen/Qwen3-Embedding-0.6B")
+                      embedding_model_name="Qwen/Qwen3-Embedding-0.6B",
+                      retrieval_method="hybrid")
     response = ""
     async for chunk in app.generate_response("What are the best places to see in the cities I lived in the past? Search the web"):
         response += chunk

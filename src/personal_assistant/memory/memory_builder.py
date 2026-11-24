@@ -31,49 +31,230 @@ class MemoryBuilder:
         """
         return [combined_message[i:i+self.token_size] for i in range(0, len(combined_message), self.token_size)]
 
-    def _generate_memory_prompt(self) -> str:
-        """Generate the prompt for the model."""
+    def _prompt_role(self) -> str:
         return """
-            You are a experienced memory builder.
+            # Role
 
-            Your role is to help build and manage memories based on the importance of the information for
-            long term storage and retrieval. You always give the output in the specified format and do not
-            deviate from it at all.
+                Acts as an efficient memory manager. Organises the memory into structured, retrievable units based on importance and relevance.
 
-            Guidelines:
-            - Focus on identifying relavant parts of the message.
-            - Names and relationships are extremely important.
-            - Focus on the significance and relevance of the information for long-term memory.
-            - Do not store trivial information.
-            - Dates and events are important for contextualizing memories.
-            - DO NOT GIVE MORE THAN 8 MEMORIES AT A TIME.
-            - Ensure that each memory is concise and captures a single piece of important information.
-            
-            Give the output exactly in the format given below as a list of dictionaries of memories.
-            DO NOT CHANGE THE FORMAT OR ADD EXTRA FIELDS/TEXTS.
-            [
-                {
-                    "content": "<content of the memory>",
-                    "importance": "<importance float score of the memory from 0 to 1>",
-                    "entities": "<list of entities mentioned in the memory>"
-                }
-            ]
+            ##Scope
 
-            Example:
-            [
-                {
-                    "content": "Alice went to the park with Bob.",
-                    "importance": "0.9",
-                    "entities": "Alice, Bob, park"
-                },
-                {
-                    "content": "Bob bought a new car.",
-                    "importance": "0.8",
-                    "entities": "Bob, car"
-                }
-            ]
+                Structures memory into respective buckets.
+
+                Identifies users' preferences, interests, relationships, and behavioral tendencies.
+
+
+            ## Boundaries
+
+                Never fabricates information as memories.
+
+                Grounds factual claims in available evidence.
+
+                Never presents assumptions as established facts.
+
+            ## Handling Uncertainty
+
+                Matches confidence levels to the strength of available evidence.
+
+                Flags ambiguities, inconsistencies, and knowledge gaps.
+
         """
 
+    def _prompt_episodic_memory(self) -> str:
+        return """
+        ## Episodic Memory
+        
+        ### Objective
+
+            Organise the user's conversations into structured episodic memories that capture meaningful experiences, events, interactions, and ideas.
+
+            Episodic memory focuses on what happened, what the user experienced, and the context in which it occurred.
+
+            It includes:
+
+                Personal experiences, such as attending conferences, travelling, or visiting places.
+
+                Interactions with people, including meetings, conversations, and significant encounters.
+
+                Professional experiences, such as work events, projects, and discussions.
+
+                Idea dumps related to technology, finance, home decor, and other interests.
+
+                Emotional experiences, including the situations that triggered them and the user's reflections.
+
+                Significant decisions, challenges, achievements, and lessons learned.
+        
+        ### Execution Steps
+
+        1. Understand the Interaction
+
+            Understand the conversation and identify meaningful experiences, events, and ideas.
+
+            Distinguish between actual experiences, hypothetical scenarios, plans, and future intentions.
+
+            Identify which information is relevant for episodic memory.
+
+            Exclude routine conversation and information that does not contribute meaningful context.
+
+        2. Identify Entities and Context
+
+            Identify the people, places, organisations, tools, projects, and other entities involved.
+
+            Identify the date, time, location, and surrounding circumstances when available.
+
+            Establish the relationships between the user, the entities, and the event.
+
+            Identify the user's role, actions, observations, and feelings where relevant.
+
+        3. Extract Independent Memories
+
+            Break the interaction into multiple independent memories.
+
+            Each memory must represent exactly one event or one distinct idea.
+
+            Separate different events even when they occur in the same conversation.
+
+            Separate distinct ideas even when they belong to the same topic.
+
+            Preserve important context that makes each memory understandable on its own.
+
+            Avoid creating multiple memories for the same event or idea.
+        
+        """
+
+    def _prompt_semantic_memory(self) -> str:
+        return """
+        ## Semantic Memory
+            Organise the user's conversations into structured semantic memories that capture stable facts, personal knowledge, preferences, relationships, and recurring patterns.
+
+            Semantic memory focuses on what is known about the user rather than what happened during a particular event.
+
+            It may include:
+
+                Personal preferences, likes, dislikes, and habits.
+
+                Interests, hobbies, and areas of expertise.
+
+                Relationships with family members, friends, colleagues, and other significant people.
+
+                Important dates, including birthdays, anniversaries, wedding days, and recurring commitments.
+
+                Long-term goals, values, priorities, and personal principles.
+
+                Stable work-related information, responsibilities, and professional preferences.
+
+                Recurring behavioural patterns and established preferences.
+
+                Persistent facts about the user's environment, lifestyle, and circumstances.
+        
+        ## Execution Steps
+
+        1. Understand the Interaction
+
+            Understand the conversation and identify factual information about the user.
+
+            Distinguish stable facts from temporary circumstances, individual experiences, and future intentions.
+
+            Identify information that may be useful across future conversations.
+
+            Determine whether the information is new, an update, a correction, or a repetition of an existing fact.
+
+        2. Identify People and Relationships
+
+            Identify the people mentioned and their relationships with the user.
+
+            Capture relationship types, such as family member, friend, colleague, partner, or professional contact.
+
+            Identify relevant relationship context when explicitly provided.
+
+            Distinguish confirmed relationships from assumptions.
+
+            Preserve the user's preferred names or ways of referring to people when available.
+
+        3. Extract Semantic Facts
+
+            Identify the user's preferences, interests, likes, dislikes, and habits.
+
+            Identify important dates, recurring commitments, and significant personal milestones.
+
+            Identify stable personal facts, values, goals, and priorities.
+
+            Identify recurring behavioural patterns supported by multiple interactions.
+
+            Convert relevant information into concise, independent facts.
+
+            Separate unrelated facts into distinct memory entries.
+        
+        """
+    def _prompt_memory_format(self) -> str:
+        return """
+        ## CRITICAL OUTPUT REQUIREMENTS:
+
+        You MUST ALWAYS follow the exact output format specified below.
+
+        Memory Format:
+        {
+            "episodic" : [{
+                "content": "<content of the memory>",
+                "importance": "<importance float score of the memory from 0 to 1>",
+                "entities": "<list of entities mentioned in the memory>"
+            }],
+            "semantic" : [{
+                "content": "<content of the memory>",
+                "importance": "<importance float score of the memory from 0 to 1>",
+                "entities": "<list of entities mentioned in the memory>"
+            }]
+        }
+
+        ## Example:
+        [
+        {"role": "user", "content": "I attended the ICCV conference in Nashville last week."},
+        {"role": "assistant", "content": "That's great! Can you tell me more about the sessions you attended? Who did you meet during the conference and what did you learn?"},
+        {"role": "user", "content": "I met my friend Laxminarayen there and attended several interesting sessions together. I was impressed with the paper \"Attention is all you need\" paper."}
+        ]
+
+        {
+            "episodic" : [
+            {
+                "content": "user attended the ICCV conference in Nashville on the week of Nov 20, 2026.",
+                "importance": "0.9",
+                "entities": ["ICCV conference", "Nashville", "Nov 20, 2026"]
+            },
+            {
+                "content": "user met their friend Laxminarayen at the ICCV conference.",
+                "importance": "0.8",
+                "entities": ["Laxminarayen", "ICCV conference"]
+            },
+            {
+                "content": "user attended several interesting sessions at the ICCV conference with Laxminarayen.",
+                "importance": "0.7",
+                "entities": ["Laxminarayen", "ICCV conference"]
+            }
+            ],
+            "semantic" : [
+            {
+                "content": "user likes \"Attention is all you need\" paper.",
+                "importance": "0.8",
+                "entities": ["Attention is all you need"]
+            },
+            {
+                "content": "user knows Laxminarayen.",
+                "importance": "0.9",
+                "entities": ["Laxminarayen"]
+            },
+            ]
+        } 
+        
+    """
+
+    def _generate_memory_prompt(self) -> str:
+        return f"""
+        {self._prompt_role()}
+        {self._prompt_episodic_memory()}
+        {self._prompt_semantic_memory()}
+        {self._prompt_memory_format()}
+        """
+    
     def deduplicate_memories(self, memories: list[Memory]) -> list[Memory]:
         """Deduplicate the given list of memories based on their content."""
         seen_contents = set()
@@ -116,7 +297,15 @@ class MemoryBuilder:
                 memory_response = ""
                 async for token in self.llm_model(input_context):
                     memory_response += token.message.content
+                memory_response = memory_response.strip().removeprefix("```json").removesuffix("```").strip()
                 prospect_memories = json.loads(memory_response)
+
+                prospect_memories = prospect_memories["episodic"] + prospect_memories["semantic"]
+
+                # add date to every memory content
+                for mem in prospect_memories:
+                    mem["content"] = f"{datetime.datetime.now(tz=datetime.UTC)!s} : {mem['content']}"
+
                 # step 3: narrow down the important memories
                 filtered_memories = [Memory(content=mem["content"], 
                                             timestamp=str(datetime.datetime.now(tz=datetime.UTC)), 

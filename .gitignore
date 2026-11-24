@@ -38,3 +38,7 @@ htmlcov/
 mlartifacts/*
 mlflow.db
 mlruns/
+
+# ignore evals json files
+tests/evals/longmemeval_memory.json
+tests/evals/longmemeval_response.json

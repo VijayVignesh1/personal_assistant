@@ -39,7 +39,7 @@ async def test_create_memories_with_correct_response(memory_builder):
                 done=False,
                 message=ollama.Message(
                     role="assistant",
-                    content='[\n    {\n        "content": "Alice went to the park with Bob.",',
+                    content='{\n    "episodic": [\n        {\n            "content": "Alice went to the park with Bob.",',
                 ),
             ),
             ollama.ChatResponse(
@@ -48,7 +48,7 @@ async def test_create_memories_with_correct_response(memory_builder):
                 done=False,
                 message=ollama.Message(
                     role="assistant",
-                    content='"importance": "0.9", "entities": "Alice, Bob, park"\n    },',
+                    content='"importance": 0.9,\n            "entities": ["Alice", "Bob", "park"]\n        },',
                 ),
             ),
             ollama.ChatResponse(
@@ -57,7 +57,7 @@ async def test_create_memories_with_correct_response(memory_builder):
                 done=False,
                 message=ollama.Message(
                     role="assistant",
-                    content='\n    {\n        "content": "Alice met Charlie at the park.", "importance": "0.8", "entities": "Alice, Charlie, park"\n    },',
+                    content='\n        {\n            "content": "Alice met Charlie at the park.",\n            "importance": 0.8,\n            "entities": ["Alice", "Charlie", "park"]\n        }\n    ],',
                 ),
             ),
             ollama.ChatResponse(
@@ -66,7 +66,16 @@ async def test_create_memories_with_correct_response(memory_builder):
                 done=False,
                 message=ollama.Message(
                     role="assistant",
-                    content='\n    {\n        "content": "Bob and Charlie decided to have a picnic.", "importance": "0.7", "entities": "Bob, Charlie, picnic"\n    }\n]',
+                    content='\n    "semantic": [\n        {\n            "content": "Bob and Charlie decided to have a picnic.",',
+                ),
+            ),
+            ollama.ChatResponse(
+                model="test-model",
+                created_at="2024-06-05T00:00:00Z",
+                done=False,
+                message=ollama.Message(
+                    role="assistant",
+                    content='"importance": 0.7,\n            "entities": ["Bob", "Charlie", "picnic"]\n        }\n    ]\n}',
                 ),
             ),
         ]
