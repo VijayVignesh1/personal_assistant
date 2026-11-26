@@ -1,29 +1,11 @@
-"""Evaluation of the memory retriever on a small sample dataset.
-
-The dataset (``dataset.json`` next to this file) contains synthetic memories and
-queries with the ids of the memories that should be retrieved for each query.
-
-Run the tests:
-    uv run pytest tests/retrieval/test_retrieval_eval.py
-
-Print the full evaluation report, including the BM25 / embedding / hybrid comparison
-(optionally with another embedding model, e.g. Qwen/Qwen3-Embedding-0.6B):
-    uv run python tests/retrieval/test_retrieval_eval.py [embedding_model_name]
-
-For a model with a query prompt (e.g. Qwen3-Embedding), the embedding and hybrid
-methods are also reported with queries encoded without the prompt ("no prompt" rows).
-"""
-
 import asyncio
 import json
 import sys
-import zlib
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-import numpy as np
-import pytest
+import mlflow
 
 from personal_assistant.models.base import BaseEmbeddingModel
 from personal_assistant.models.embeddingModel import embeddingModel
@@ -37,9 +19,9 @@ TOP_K = 5  # same value the application uses
 COMPARED_METHODS: list[tuple[str, RetrievalMethod, float]] = [
     ("bm25", "bm25", 0.5),
     ("embedding", "embedding", 0.5),
-    ("hybrid w=0.3", "hybrid", 0.3),
-    ("hybrid w=0.5", "hybrid", 0.5),
-    ("hybrid w=0.7", "hybrid", 0.7),
+    ("hybrid w_0.3", "hybrid", 0.3),
+    ("hybrid w_0.5", "hybrid", 0.5),
+    ("hybrid w_0.7", "hybrid", 0.7),
 ]
 
 
@@ -126,13 +108,13 @@ async def evaluate(
             "type": q["type"],
             "retrieved": retrieved,
             "relevant": sorted(relevant),
-            f"hit@{k}": hit_at_k(retrieved, relevant, k),
-            f"recall@{k}": recall_at_k(retrieved, relevant, k),
-            f"precision@{k}": precision_at_k(retrieved, relevant, k),
+            f"hit_at_{k}": hit_at_k(retrieved, relevant, k),
+            f"recall_at_{k}": recall_at_k(retrieved, relevant, k),
+            f"precision_at_{k}": precision_at_k(retrieved, relevant, k),
             "mrr": reciprocal_rank(retrieved, relevant),
         })
 
-    metric_names = [f"hit@{k}", f"recall@{k}", f"precision@{k}", "mrr"]
+    metric_names = [f"hit_at_{k}", f"recall_at_{k}", f"precision_at_{k}", "mrr"]
 
     def average(rows: list[dict[str, Any]]) -> dict[str, float]:
         return {name: sum(r[name] for r in rows) / len(rows) for name in metric_names}
@@ -150,13 +132,13 @@ async def evaluate(
 
 def format_report(results: dict[str, Any]) -> str:
     k = results["k"]
-    metric_names = [f"hit@{k}", f"recall@{k}", f"precision@{k}", "mrr"]
+    metric_names = [f"hit_at_{k}", f"recall_at_{k}", f"precision_at_{k}", "mrr"]
     lines = [f"{'group':<12}{'n':>4}" + "".join(f"{m:>14}" for m in metric_names)]
     for group, stats in results["summary"].items():
         lines.append(
             f"{group:<12}{stats['n']:>4}" + "".join(f"{stats[m]:>14.3f}" for m in metric_names)
         )
-    misses = [r for r in results["per_query"] if r[f"hit@{k}"] == 0.0]
+    misses = [r for r in results["per_query"] if r[f"hit_at_{k}"] == 0.0]
     lines.append("")
     lines.append(f"Queries with no relevant memory in top {k} ({len(misses)}):")
     for r in misses:
@@ -192,7 +174,7 @@ async def compare_methods(
         plain_queries = WithoutQueryPrompt(embedding_model)
         for label, method, bm25_weight in COMPARED_METHODS:
             if method != "bm25":
-                results[f"{label} (no prompt)"] = await evaluate(
+                results[f"{label} --no prompt--"] = await evaluate(
                     dataset, k, memories, plain_queries, method, bm25_weight
                 )
     return results
@@ -201,7 +183,7 @@ async def compare_methods(
 def format_comparison(results_by_method: dict[str, dict[str, Any]], model_name: str) -> str:
     """One table of Hit@k, Recall@k and MRR per method and query type."""
     k = next(iter(results_by_method.values()))["k"]
-    metric_names = [f"hit@{k}", f"recall@{k}", "mrr"]
+    metric_names = [f"hit_at_{k}", f"recall_at_{k}", "mrr"]
     width = max(len("method"), *(len(label) for label in results_by_method)) + 2
     lines = [
         f"Embedding model: {model_name}",
@@ -216,110 +198,52 @@ def format_comparison(results_by_method: dict[str, dict[str, Any]], model_name: 
     return "\n".join(lines)
 
 
-# ---------------------------------------------------------------- tests
+def log_comparison_results_to_mlflow(
+    results: dict,  compared_methods: list[tuple[str, str, float]], experiment_name: str = "retrieval-evaluation"
+    ) -> None:
+    """
+    Log evaluation results to MLflow, one run per retrieval method.
+    """
+    mlflow.set_tracking_uri("sqlite:///../mlflow.db")
+    mlflow.set_experiment(experiment_name)
 
-@pytest.fixture(scope="module")
-def dataset() -> dict[str, Any]:
-    return load_dataset()
+    with mlflow.start_run(run_name="retrieval_evaluation"):
 
+        for method, data in results.items():
 
-@pytest.fixture(scope="module")
-def embedding_model() -> BaseEmbeddingModel:
-    return embeddingModel()  # the small default model
+            # Log summary metrics
+            summary = data["summary"]
 
+            for category, metrics in summary.items():
 
-def test_metrics_on_known_ranking() -> None:
-    retrieved = ["a", "b", "c", "d"]
-    relevant = {"b", "d", "x"}
-    assert hit_at_k(retrieved, relevant, 1) == 0.0
-    assert hit_at_k(retrieved, relevant, 2) == 1.0
-    assert recall_at_k(retrieved, relevant, 4) == pytest.approx(2 / 3)
-    assert precision_at_k(retrieved, relevant, 4) == pytest.approx(0.5)
-    assert reciprocal_rank(retrieved, relevant) == pytest.approx(0.5)
-    assert reciprocal_rank(retrieved, {"z"}) == 0.0
+                for metric_name, value in metrics.items():
 
+                    # Log metrics with unique names
+                    mlflow.log_metric(
+                        f"{method}/{category}/{metric_name}",
+                        float(value)
+                    )
 
-def test_dataset_is_consistent(dataset: dict[str, Any]) -> None:
-    memory_ids = [m["memory_id"] for m in dataset["memories"]]
-    query_ids = [q["query_id"] for q in dataset["queries"]]
-    assert len(memory_ids) == len(set(memory_ids)), "duplicate memory_id"
-    assert len(query_ids) == len(set(query_ids)), "duplicate query_id"
-    for q in dataset["queries"]:
-        assert q["relevant_memory_ids"], f"{q['query_id']} has no relevant memories"
-        assert set(q["relevant_memory_ids"]) <= set(memory_ids), f"{q['query_id']} unknown id"
-        assert q["type"] in {"lexical", "paraphrase"}
+            # Log per-query results as JSON
+            artifact_path = Path(f"{method}_results.json")
 
+            with open(artifact_path, "w") as f:
+                json.dump(data["per_query"], f, indent=2)
 
-@pytest.mark.asyncio
-async def test_retrieval_evaluation_runs(dataset: dict[str, Any]) -> None:
-    results = await evaluate(dataset)
-    print("\n" + format_report(results))
-
-    assert len(results["per_query"]) == len(dataset["queries"])
-    for stats in results["summary"].values():
-        for name, value in stats.items():
-            if name != "n":
-                assert 0.0 <= value <= 1.0
-
-
-@pytest.mark.asyncio
-async def test_retrieval_method_comparison(
-    dataset: dict[str, Any], embedding_model: BaseEmbeddingModel
-) -> None:
-    results_by_method = await compare_methods(dataset, embedding_model)
-    print("\n" + format_comparison(results_by_method, embedding_model.model_name))
-
-    # the small default model has no query prompt, so there are no "no prompt" rows
-    assert list(results_by_method) == [label for label, _, _ in COMPARED_METHODS]
-    for results in results_by_method.values():
-        assert len(results["per_query"]) == len(dataset["queries"])
-        for stats in results["summary"].values():
-            for name, value in stats.items():
-                if name != "n":
-                    assert 0.0 <= value <= 1.0
-
-
-class FakeQueryPromptModel(BaseEmbeddingModel):
-    """Deterministic pseudo-random vectors; queries get a different vector than documents."""
-
-    def __init__(self) -> None:
-        super().__init__("fake-query-prompt-model")
-        self.query_prompt_name = "query"
-
-    @staticmethod
-    def _vector(text: str) -> bytes:
-        rng = np.random.default_rng(zlib.crc32(text.encode()))
-        vector = rng.standard_normal(8).astype(np.float32)
-        return (vector / np.linalg.norm(vector)).tobytes()
-
-    async def __call__(self, input: str) -> bytes:
-        return self._vector(input)
-
-    async def embed_query(self, input: str) -> bytes:
-        return self._vector("query: " + input)
-
-
-@pytest.mark.asyncio
-async def test_comparison_adds_no_prompt_rows_for_query_prompt_models(
-    dataset: dict[str, Any]
-) -> None:
-    results_by_method = await compare_methods(dataset, FakeQueryPromptModel())
-
-    expected = [label for label, _, _ in COMPARED_METHODS] + [
-        f"{label} (no prompt)" for label, method, _ in COMPARED_METHODS if method != "bm25"
-    ]
-    assert list(results_by_method) == expected
-    # the two variants rank with different query vectors
-    assert (results_by_method["embedding"]["per_query"]
-            != results_by_method["embedding (no prompt)"]["per_query"])
-
+            mlflow.log_artifact(str(artifact_path))
 
 async def main() -> None:
     data = load_dataset()
     print(format_report(await evaluate(data)))
     model = embeddingModel(*sys.argv[1:2])
+
+    # replace - by _ in model name for display purposes
+    model.model_name = model.model_name.replace("-", "_")
+
     print()
     results_by_method = await compare_methods(data, model)
+
+    log_comparison_results_to_mlflow(results_by_method, COMPARED_METHODS, experiment_name="retrieval-evaluation")
     print(format_comparison(results_by_method, model.model_name))
 
 

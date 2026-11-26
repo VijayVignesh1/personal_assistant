@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import mlflow
 from longmemeval_response_generator import OUTPUT_FILE
@@ -9,11 +10,12 @@ from mlflow.genai.scorers import (
 )
 
 # 1. MLflow tracking
-mlflow.set_tracking_uri("sqlite:///mlflow.db")
+db_path = Path(__file__).resolve().parent / "../mlflow.db"
+mlflow.set_tracking_uri(f"sqlite:///{db_path}")
 mlflow.set_experiment("conversation-evaluation")
 
 # 2. Local Ollama judge
-judge_model = "ollama:/gemma3:4b"
+judge_model = "ollama:/ggozad/prometheus2"  #"ollama:/gemma3:4b"
 
 with open(OUTPUT_FILE, "r") as f:
     records = json.load(f)
@@ -37,7 +39,6 @@ for record in records:
         }
     })
 
-judge_model = "ollama:/gemma3:4b"
 
 scorers = [
     Correctness(model=judge_model),
