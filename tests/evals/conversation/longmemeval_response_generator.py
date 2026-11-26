@@ -3,6 +3,7 @@ import datetime
 import json
 import uuid
 from dataclasses import asdict
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -19,7 +20,7 @@ from personal_assistant.retriever.retrieval import Retriever
 MODEL_NAME = "gemma4:e2b"
 EMBEDDING_MODEL_NAME = "Qwen/Qwen3-Embedding-0.6B"
 
-INPUT_FILE = "longmemeval_oracle.json"
+INPUT_FILE = Path(__file__).resolve().parent / "../data/longmemeval_oracle.json"
 MEMORY_FILE = "longmemeval_memory.json"
 OUTPUT_FILE = "longmemeval_response.json"
 
@@ -186,7 +187,6 @@ async def generate_response(
 
     async for chunk in response_generator.generate_response(context):
         response += chunk.message.content
-        # print(chunk, end="", flush=True)
 
     return response
 

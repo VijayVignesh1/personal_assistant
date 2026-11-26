@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 
 import mlflow
 import pyarrow.parquet as pq
@@ -15,7 +16,8 @@ PARQUET_FILE = "websearch.parquet"  # https://huggingface.co/datasets/kd13/WebSe
 MODEL_NAME = "gemma4:e2b"
 
 # 1. MLflow tracking
-mlflow.set_tracking_uri("sqlite:///mlflow.db")
+db_path = Path(__file__).resolve().parent / "../mlflow.db"
+mlflow.set_tracking_uri(f"sqlite:///{db_path}")
 mlflow.set_experiment("tool-calling-evaluation")
 
 # 2. Local Ollama judge
