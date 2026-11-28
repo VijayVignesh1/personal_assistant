@@ -199,7 +199,7 @@ def format_comparison(results_by_method: dict[str, dict[str, Any]], model_name: 
 
 
 def log_comparison_results_to_mlflow(
-    results: dict,  compared_methods: list[tuple[str, str, float]], experiment_name: str = "retrieval-evaluation"
+    results: dict, experiment_name: str = "retrieval-evaluation"
     ) -> None:
     """
     Log evaluation results to MLflow, one run per retrieval method.
@@ -243,7 +243,7 @@ async def main() -> None:
     print()
     results_by_method = await compare_methods(data, model)
 
-    log_comparison_results_to_mlflow(results_by_method, COMPARED_METHODS, experiment_name="retrieval-evaluation")
+    log_comparison_results_to_mlflow(results_by_method, experiment_name="retrieval-evaluation")
     print(format_comparison(results_by_method, model.model_name))
 
 
