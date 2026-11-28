@@ -2,8 +2,8 @@ import json
 from pathlib import Path
 
 
-def load_locomo(path):
-    """Load LOCOMO data as JSON or JSONL."""
+def load_longmemeval(path):
+    """Load longmemeval data as JSON"""
     text = Path(path).read_text(encoding="utf-8").strip()
 
     try:
@@ -29,7 +29,7 @@ def load_locomo(path):
 
 
 def normalize_question_type(question_type):
-    """Map LOCOMO question types to broader benchmark categories."""
+    """Map longmemeval question types to broader benchmark categories."""
 
     mapping = {
         "temporal-reasoning": "temporal",
@@ -44,8 +44,8 @@ def normalize_question_type(question_type):
     )
 
 
-def convert_locomo(input_path, output_path):
-    records = load_locomo(input_path)
+def convert_longmemeval(input_path, output_path):
+    records = load_longmemeval(input_path)
 
     memories = []
     queries = []
@@ -150,7 +150,7 @@ def convert_locomo(input_path, output_path):
 
 
 if __name__ == "__main__":
-    INPUT_FILE = "../longmemeval_oracle.json"
+    INPUT_FILE = "../data/longmemeval_oracle.json"
     OUTPUT_FILE = "dataset.json"
 
-    convert_locomo(INPUT_FILE, OUTPUT_FILE)
+    convert_longmemeval(INPUT_FILE, OUTPUT_FILE)
